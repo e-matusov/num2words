@@ -20,7 +20,7 @@ from __future__ import unicode_literals
 from .base import Num2Word_Base
 from .utils import get_digits, splitbyx
 import regex as re
-
+from .currency import parse_currency_parts, prefix_currency
 
 def get_ord_map(mydict):
     result = {}
@@ -28,144 +28,185 @@ def get_ord_map(mydict):
         result[val[0]] = val[1]
     return result
 
-ZERO = ('ноль', 'нуля', 'нулю', 'ноль', 'нулем', 'нуле')
+def print_forms(mapping, pref=''):
+    for v in mapping.values():
+        for x in v:
+            print(pref+x)
 
-ONES_FEMININE = {
-    1: ('одна', 'одной', 'одной', 'одну', 'одной', 'одной'),
-    2: ('две', 'двух', 'двум', 'две', 'двумя', 'двух'),
-    3: ('три', 'трех', 'трем', 'три', 'тремя', 'трех'),
-    4: ('четыре', 'четырех', 'четырем', 'четыре', 'четырьмя', 'четырех'),
-    5: ('пять', 'пяти', 'пяти', 'пять', 'пятью', 'пяти'),
-    6: ('шесть', 'шести', 'шести', 'шесть', 'шестью', 'шести'),
-    7: ('семь', 'семи', 'семи', 'семь', 'семью', 'семи'),
-    8: ('восемь', 'восьми', 'восьми', 'восемь', 'восемью', 'восьми'),
-    9: ('девять', 'девяти', 'девяти', 'девять', 'девятью', 'девяти'),
-}
+class LanguageResources_RU:
 
-ONES = {
-    1: ('один', 'одного', 'одному', 'один', 'одним', 'одном'),
-    2: ('два', 'двух', 'двум', 'два', 'двумя', 'двух'),
-    3: ('три', 'трёх', 'трём', 'три', 'тремя', 'трёх'),
-    4: ('четыре', 'четырёх', 'четырём', 'четыре', 'четырьмя', 'четырёх'),
-    5: ('пять', 'пяти', 'пяти', 'пять', 'пятью', 'пяти'),
-    6: ('шесть', 'шести', 'шести', 'шесть', 'шестью', 'шести'),
-    7: ('семь', 'семи', 'семи', 'семь', 'семью', 'семи'),
-    8: ('восемь', 'восьми', 'восьми', 'восемь', 'восемью', 'восьми'),
-    9: ('девять', 'девяти', 'девяти', 'девять', 'девятью', 'девяти'),
-}
+    def print_all_forms(self):
+        for v in self.ZERO:
+            print(v)
+        print_forms(self.ONES_FEMININE)
+        print_forms(self.ONES)
+        print_forms(self.TENS)
+        print_forms(self.TWENTIES)
+        print_forms(self.HUNDREDS)
+        print(self.NEGWORD)
+        print(self.POINTWORD)
+        for v in self.THOUSANDS_BASE.values():
+           for x in self.THOUSANDS.values():
+               for y in x:
+                   for z in y:
+                       print(v+z)
+        for v in self.ORD_STEMS.values():
+            print_forms(self.ORD_SUFFIXES, v)
+            print_forms(self.ORD_THREE, v)
+        for x in self.ORDS_FEMININE.values():
+            print(x)
 
-TENS = {
-    0: ('десять', 'десяти', 'десяти', 'десять', 'десятью', 'десяти'),
-    1: ('одиннадцать', 'одиннадцати', 'одиннадцати', 'одиннадцать', 'одиннадцатью', 'одиннадцати'),
-    2: ('двенадцать', 'двенадцати', 'двенадцати', 'двенадцать', 'двенадцатью', 'двенадцати'),
-    3: ('тринадцать', 'тринадцати', 'тринадцати', 'тринадцать', 'тринадцатью', 'тринадцати'),
-    4: ('четырнадцать', 'четырнадцати', 'четырнадцати', 'четырнадцать', 'четырнадцатью', 'четырнадцати'),
-    5: ('пятнадцать', 'пятнадцати', 'пятнадцати', 'пятнадцать', 'пятнадцатью', 'пятнадцати'),
-    6: ('шестнадцать', 'шестнадцати', 'шестнадцати', 'шестнадцать', 'шестнадцатью', 'шестнадцати'),
-    7: ('семнадцать', 'семнадцати', 'семнадцати', 'семнадцать', 'семнадцатью', 'семнадцати'),
-    8: ('восемнадцать', 'восемнадцати', 'восемнадцати', 'восемнадцать', 'восемнадцатью', 'восемнадцати'),
-    9: ('девятнадцать', 'девятнадцати', 'девятнадцати', 'девятнадцать', 'девятнадцатью', 'девятнадцати'),
-}
+    def __init__(self):
+        self.NOUN_CASES = {'nom': 0,
+                           'gen': 1,
+                           'dat': 2,
+                           'acc': 3,
+                           'inst': 4,
+                           'prep': 5}
+        self.GENDERS = {'masc': 0,
+                        'neut':  1,
+                        'fem': 2,
+                        'plur': 3} # technically not gender, but...
 
-ORD_MAP = get_ord_map(TENS)
+        self.ZERO = ('ноль', 'нуля', 'нулю', 'ноль', 'нулем', 'нуле')
+        self.ONES_FEMININE = {
+            1: ('одна', 'одной', 'одной', 'одну', 'одной', 'одной'),
+            2: ('две', 'двух', 'двум', 'две', 'двумя', 'двух'),
+            3: ('три', 'трех', 'трем', 'три', 'тремя', 'трех'),
+            4: ('четыре', 'четырех', 'четырем', 'четыре', 'четырьмя', 'четырех'),
+            5: ('пять', 'пяти', 'пяти', 'пять', 'пятью', 'пяти'),
+            6: ('шесть', 'шести', 'шести', 'шесть', 'шестью', 'шести'),
+            7: ('семь', 'семи', 'семи', 'семь', 'семью', 'семи'),
+            8: ('восемь', 'восьми', 'восьми', 'восемь', 'восемью', 'восьми'),
+            9: ('девять', 'девяти', 'девяти', 'девять', 'девятью', 'девяти'),
+        }
 
-TWENTIES = {
-    2: ('двадцать', 'двадцати', 'двадцати', 'двадцать', 'двадцатью', 'двадцати'),
-    3: ('тридцать', 'тридцати', 'тридцати', 'тридцать', 'тридцатью', 'тридцати'),
-    4: ('сорок', 'сорока', 'сорока', 'сорок', 'сорока', 'сорока'),
-    5: ('пятьдесят', 'пятидесяти', 'пятидесяти', 'пятьдесят', 'пятидесятью', 'пятидесяти'),
-    6: ('шестьдесят', 'шестидесяти', 'шестидесяти', 'шестьдесят', 'шестидесятью', 'шестидесяти'),
-    7: ('семьдесят', 'семидесяти', 'семидесяти', 'семьдесят', 'семидесятью', 'семидесяти'),
-    8: ('восемьдесят', 'восьмидесяти', 'восьмидесяти', 'восемьдесят', 'восьмидесятью', 'восьмидесяти'),
-    9: ('девяносто', 'девяноста', 'девяноста', 'девяносто', 'девяноста', 'девяноста'),
-}
+        self.ONES = {
+            1: ('один', 'одного', 'одному', 'один', 'одним', 'одном'),
+            2: ('два', 'двух', 'двум', 'два', 'двумя', 'двух'),
+            3: ('три', 'трёх', 'трём', 'три', 'тремя', 'трёх'),
+            4: ('четыре', 'четырёх', 'четырём', 'четыре', 'четырьмя', 'четырёх'),
+            5: ('пять', 'пяти', 'пяти', 'пять', 'пятью', 'пяти'),
+            6: ('шесть', 'шести', 'шести', 'шесть', 'шестью', 'шести'),
+            7: ('семь', 'семи', 'семи', 'семь', 'семью', 'семи'),
+            8: ('восемь', 'восьми', 'восьми', 'восемь', 'восемью', 'восьми'),
+            9: ('девять', 'девяти', 'девяти', 'девять', 'девятью', 'девяти'),
+        }
 
-ORD_MAP.update(get_ord_map(TWENTIES))
+        self.TENS = {
+            0: ('десять', 'десяти', 'десяти', 'десять', 'десятью', 'десяти'),
+            1: ('одиннадцать', 'одиннадцати', 'одиннадцати', 'одиннадцать', 'одиннадцатью', 'одиннадцати'),
+            2: ('двенадцать', 'двенадцати', 'двенадцати', 'двенадцать', 'двенадцатью', 'двенадцати'),
+            3: ('тринадцать', 'тринадцати', 'тринадцати', 'тринадцать', 'тринадцатью', 'тринадцати'),
+            4: ('четырнадцать', 'четырнадцати', 'четырнадцати', 'четырнадцать', 'четырнадцатью', 'четырнадцати'),
+            5: ('пятнадцать', 'пятнадцати', 'пятнадцати', 'пятнадцать', 'пятнадцатью', 'пятнадцати'),
+            6: ('шестнадцать', 'шестнадцати', 'шестнадцати', 'шестнадцать', 'шестнадцатью', 'шестнадцати'),
+            7: ('семнадцать', 'семнадцати', 'семнадцати', 'семнадцать', 'семнадцатью', 'семнадцати'),
+            8: ('восемнадцать', 'восемнадцати', 'восемнадцати', 'восемнадцать', 'восемнадцатью', 'восемнадцати'),
+            9: ('девятнадцать', 'девятнадцати', 'девятнадцати', 'девятнадцать', 'девятнадцатью', 'девятнадцати'),
+        }
+        self.ORD_MAP = get_ord_map(self.TENS)
 
-HUNDREDS = {
-    1: ('сто', 'ста', 'стам', 'сто', 'ста', 'ста'),
-    2: ('двести', 'двухсот', 'двумстам', 'двести', 'двумяста', 'двухстах'),
-    3: ('триста', 'трёхсот', 'трёмстам', 'триста', 'тремястами', 'трёхстах'),
-    4: ('четыреста', 'четырёхсот', 'четырёмстам', 'четыреста', 'четырьмястами', 'четырёхстах'),
-    5: ('пятьсот', 'пятисот', 'пятистам', 'пятьсот', 'пятьюстами', 'пятистах'),
-    6: ('шестьсот', 'шестисот', 'шестистам', 'шестьсот', 'шестьюстами', 'шестистах'),
-    7: ('семьсот', 'семисот', 'семистам', 'семьсот', 'семьюстами', 'семистах'),
-    8: ('восемьсот', 'восьмисот', 'восьмистам', 'восемьсот', 'восемьюстами', 'восьмистах'),
-    9: ('девятьсот', 'девятисот', 'девятистам', 'девятьсот', 'девятьюстами', 'девятистах'),
-}
-ORD_MAP.update(get_ord_map(HUNDREDS))
+        self.TWENTIES = {
+            2: ('двадцать', 'двадцати', 'двадцати', 'двадцать', 'двадцатью', 'двадцати'),
+            3: ('тридцать', 'тридцати', 'тридцати', 'тридцать', 'тридцатью', 'тридцати'),
+            4: ('сорок', 'сорока', 'сорока', 'сорок', 'сорока', 'сорока'),
+            5: ('пятьдесят', 'пятидесяти', 'пятидесяти', 'пятьдесят', 'пятидесятью', 'пятидесяти'),
+            6: ('шестьдесят', 'шестидесяти', 'шестидесяти', 'шестьдесят', 'шестидесятью', 'шестидесяти'),
+            7: ('семьдесят', 'семидесяти', 'семидесяти', 'семьдесят', 'семидесятью', 'семидесяти'),
+            8: ('восемьдесят', 'восьмидесяти', 'восьмидесяти', 'восемьдесят', 'восьмидесятью', 'восьмидесяти'),
+            9: ('девяносто', 'девяноста', 'девяноста', 'девяносто', 'девяноста', 'девяноста'),
+        }
+        self.ORD_MAP.update(get_ord_map(self.TWENTIES))
 
-THOUSANDS_BASE = {
-1: 'тысяч',
-2: 'миллион',
-3: 'миллиард',
-4: 'триллион',
-5: 'квадриллион',
-6: 'квинтиллион',
-7: 'секстиллион',
-8: 'септиллион',
-9: 'октиллион',
-10: 'нониллион'
-}
+        self.HUNDREDS = {
+            1: ('сто', 'ста', 'стам', 'сто', 'ста', 'ста'),
+            2: ('двести', 'двухсот', 'двумстам', 'двести', 'двумяста', 'двухстах'),
+            3: ('триста', 'трёхсот', 'трёмстам', 'триста', 'тремястами', 'трёхстах'),
+            4: ('четыреста', 'четырёхсот', 'четырёмстам', 'четыреста', 'четырьмястами', 'четырёхстах'),
+            5: ('пятьсот', 'пятисот', 'пятистам', 'пятьсот', 'пятьюстами', 'пятистах'),
+            6: ('шестьсот', 'шестисот', 'шестистам', 'шестьсот', 'шестьюстами', 'шестистах'),
+            7: ('семьсот', 'семисот', 'семистам', 'семьсот', 'семьюстами', 'семистах'),
+            8: ('восемьсот', 'восьмисот', 'восьмистам', 'восемьсот', 'восемьюстами', 'восьмистах'),
+            9: ('девятьсот', 'девятисот', 'девятистам', 'девятьсот', 'девятьюстами', 'девятистах'),
+        }
+        self.ORD_MAP.update(get_ord_map(self.HUNDREDS))
 
-THOUSANDS = {
-    1: (('а', 'и', 'ам', 'у', 'ью', 'е'),
-        ('и', '', 'ам', 'и', 'ами', 'ах'),
-        ('', '', 'ам', '', 'ами', 'ах')),  # 10^3
-    2: (('', 'а', 'у', '', 'ом', 'е'),
-        ('а', 'ов', 'ам', 'а', 'ами', 'ах'),
-        ('ов', 'ов', 'ам', 'ов', 'ами', 'ах'))
-}
+        self.THOUSANDS_BASE = {
+        1: 'тысяч',
+        2: 'миллион',
+        3: 'миллиард',
+        4: 'триллион',
+        5: 'квадриллион',
+        6: 'квинтиллион',
+        7: 'секстиллион',
+        8: 'септиллион',
+        9: 'октиллион',
+        10: 'нониллион'
+        }
 
+        self.THOUSANDS = {
+            1: (('а', 'и', 'ам', 'у', 'ью', 'е'),
+                ('и', '', 'ам', 'и', 'ами', 'ах'),
+                ('', '', 'ам', '', 'ами', 'ах')),  # 10^3
+            2: (('', 'а', 'у', '', 'ом', 'е'),
+                ('а', 'ов', 'ам', 'а', 'ами', 'ах'),
+                ('ов', 'ов', 'ам', 'ов', 'ами', 'ах'))
+        }
 
+        self.CURRENCY_FORMS = {
+            'RUB': (
+                (('рубль', 'рубля', 'рублю', 'рубль', 'рублём', 'рубле'),
+                 ('рубля', 'рублей', 'рублям', 'рубля', 'рублями', 'рублях'),
+                 ('рублей', 'рублей', 'рублям', 'рублей', 'рублями', 'рублях')),
+                (('копейка', 'копейки', 'копейке', 'копейку', 'копейкой', 'копейке'),
+                 ('копейки', 'копеек', 'копейкам', 'копейки', 'копейками', 'копейках'),
+                 ('копеек', 'копеек', 'копейкам', 'копеек', 'копейками', 'копейках'))
+            ),
+            'EUR': (
+                ('евро', 'евро', 'евро'),
+                (('цент', 'цента', 'центу', 'цент', 'центом', 'центе'),
+                 ('цента', 'центов', 'центам', 'цента', 'центами', 'центах'),
+                 ('центов', 'центов', 'центам', 'центов', 'центами', 'центах'))
+            ),
+            'USD': (
+                (('доллар', 'доллара', 'доллару', 'доллар', 'долларом', 'долларе'),
+                 ('доллара', 'долларов', 'долларам', 'доллара', 'долларами', 'долларах'),
+                 ('долларов', 'долларов', 'долларам', 'долларов', 'долларами', 'долларах')),
+                (('цент', 'цента', 'центу', 'цент', 'центом', 'центе'),
+                 ('цента', 'центов', 'центам', 'цента', 'центами', 'центах'),
+                 ('центов', 'центов', 'центам', 'центов', 'центами', 'центах'))
+            ),
+            'UAH': (
+                (('гривна', 'гривны', 'гривне', 'гривну', 'гривной', 'гривне'),
+                 ('гривны', 'гривен', 'гривнам', 'гривны', 'гривнами', 'гривнах'),
+                 ('гривен', 'гривен', 'гривнам', 'гривен', 'гривнами', 'гривнах')),
+                (('копейка', 'копейки', 'копейке', 'копейку', 'копейкой', 'копейке'),
+                 ('копейки', 'копеек', 'копейкам', 'копейки', 'копейками', 'копейках'),
+                 ('копеек', 'копеек', 'копейкам', 'копеек', 'копейками', 'копейках'))
+            ),
+            'KZT': (
+                ('тенге', 'тенге', 'тенге'),
+                (('тиын', 'тиына', 'тиыну', 'тиын', 'тиыном', 'тиыне'),
+                 ('тиына', 'тиынов', 'тиынам', 'тиына', 'тиынами', 'тиынах'),
+                 ('тиынов', 'тиынов', 'тиынам', 'тиынов', 'тиынами', 'тиынах'))
+            ),
+        }
 
-class Num2Word_RU(Num2Word_Base):
-    CURRENCY_FORMS = {
-        'RUB': (
-            ('рубль', 'рубля', 'рублей'), ('копейка', 'копейки', 'копеек')
-        ),
-        'EUR': (
-            ('евро', 'евро', 'евро'), ('цент', 'цента', 'центов')
-        ),
-        'USD': (
-            ('доллар', 'доллара', 'долларов'), ('цент', 'цента', 'центов')
-        ),
-        'UAH': (
-            ('гривна', 'гривны', 'гривен'), ('копейка', 'копейки', 'копеек')
-        ),
-        'KZT': (
-            ('тенге', 'тенге', 'тенге'), ('тиын', 'тиына', 'тиынов')
-        ),
-    }
-    def pluralize(self, n, forms):
-        if n == 0:
-            return forms[2]
-        if n % 10 == 1:
-            return forms[0]
-        elif n % 10 <= 4:
-            return forms[1]
-        return forms[2]
+        self.NEGWORD = "минус"
+        self.POINTWORD = "запятая"
 
-    def setup(self):
-
-        self.cards_suff_map = {'ти': 1,
-                               'и': 1
-                               }
-
-        self.negword = "минус"
-        self.pointword = "запятая"
-
-        self.ord_suffixes = {0: ('ый', 'ого', 'ому', 'ый', 'ым', 'ом'),
+        self.ORD_SUFFIXES = {0: ('ый', 'ого', 'ому', 'ый', 'ым', 'ом'),
                              1: ('ое', 'ого', 'ому', 'ое', 'ым', 'ом'),
                              2: ('ая', 'ой', 'ой', 'ую', 'ой', 'ой'),
                              3: ('ые', 'ых', 'ым', 'ые', 'ыми', 'ых')}
 
-        self.ord_three = {0: ('ий', 'ьего', 'ьему', 'ий', 'ьим', 'ьем'),
+        self.ORD_THREE = {0: ('ий', 'ьего', 'ьему', 'ий', 'ьим', 'ьем'),
                           1: ('ье', 'ьего', 'ьему', 'ье', 'ьим', 'ьем'),
                           2: ('ья', 'ьей', 'ьей', 'ью', 'ьей', 'ьей'),
                           3: ('ьи', 'ьих', 'ьим', 'ьи', 'ьими', 'ьих')}
 
-        self.ord_stems = {"ноль": "нулев",
+        self.ORD_STEMS = {"ноль": "нулев",
                           "один": "перв",
                           "два": "втор",
                           "три": "трет",
@@ -176,10 +217,10 @@ class Num2Word_RU(Num2Word_Base):
                           "восемь": "восьм",
                           "девять": "девят",
                           "сто": "сот"}
-        for x in THOUSANDS_BASE.values():
-            self.ord_stems[x] = x + 'н'
+        for x in self.THOUSANDS_BASE.values():
+            self.ORD_STEMS[x] = x + 'н'
 
-        self.ords = {"ноль": "нулевой",
+        self.ORDS = {"ноль": "нулевой",
                      "один": "первый",
                      "два": "второй",
                      "три": "третий",
@@ -190,8 +231,11 @@ class Num2Word_RU(Num2Word_Base):
                      "восемь": "восьмой",
                      "девять": "девятый",
                      "сто": "сотый"}
-
-        self.ords_feminine = {"один": "одна",
+        self.ORDS_SINGLE = {"один": "одна",
+                            "одна": "одна",
+                            "одного": "одна",
+                            "одной": "одна"}
+        self.ORDS_FEMININE = {"один": "одна",
                               "одна": "одна",
                               "одного": "одна",
                               "одной": "одна",
@@ -202,46 +246,91 @@ class Num2Word_RU(Num2Word_Base):
                               "шесть": "шести",
                               "семь": "семи",
                               "восемь": "восьми",
-                              "девять": "девяти",
-                              }
-        self.ords_suff_map = {'го': (0, 1),
-                              'х': (3, 1),
-                              'ых': (3, 1),
-                              'м': (0, 5),
-                              'ом': (0, 5),
-                              'му': (0, 2),
-                              'ому': (0, 2),
-                              'ой': (2, 1),
-                              'ая': (2, 0),
-                              'я': (2, 0),
-                              'ую': (2, 3),
-                              'ю': (2, 3),
-                              'й': (0, 0),
-                              'ый': (0, 0),
-                              'е': (3, 0),
-                              'ые': (3, 0),
-                              'ми': (3, 4)
-                             }
+                              "девять": "девяти"}
+        self.ORDS_FEMININE.update(self.ORDS_SINGLE)
+
+        self.OY_ORDINALS = ('ноль', 'два', 'шесть', 'семь', 'восемь')
+
+class Num2Word_RU(Num2Word_Base):
+
+    def setup(self):
+        self.lr = LanguageResources_RU()
 
     def to_cardinal(self, number, case=0):
         n = str(number).replace(',', '.')
-        my_case = case
-        m = re.match('^(.*?\d+)\-?(\p{L}{1,3})', n)
-        if m:
-            n = m.group(1)
-            suff = m.group(2)
-            if suff in self.cards_suff_map:
-                my_case = self.cards_suff_map[suff]
-
         if '.' in n:
             left, right = n.split('.')
             return u'%s %s %s' % (
-                self._int2word(int(left), case=my_case),
-                self.pointword,
-                self._int2word(int(right), case=my_case)
+                self._int2word(int(left), case=case),
+                self.lr.POINTWORD,
+                self._int2word(int(right), case=case)
             )
         else:
-            return self._int2word(int(n), case=my_case)
+            return self._int2word(int(n), case=case)
+
+    def to_ordinal(self, number, num_gender=0, case=0):
+        n = str(number)
+        return self.to_ordinal_num(int(n), num_gender=num_gender, case=case)
+
+    def to_year(self, number, case=0):
+        return self.to_ordinal(number, num_gender=0, case=case)
+
+    def to_fraction(self, number, case=0):
+        n = str(number)
+        m = re.match('(\d+)\/(\d+)', n)
+        if m:
+            nominator = m.group(1)
+            denominator = m.group(2)
+            return self.to_cardinal(nominator, case) + ' ' + self.to_ordinal(denominator, num_gender=3, case=1)
+        else:
+            raise ValueError(number)
+
+    def to_currency(self, val, currency='EUR', cents=True, separator='', case=0, currency_forms=None):
+        '''
+        currency_forms: tuple (,)
+        '''
+        my_val = str(val).replace(',', '.')
+        left, right, is_negative = parse_currency_parts(my_val)
+        if currency_forms:
+            cr1, cr2 = currency_forms
+            currency_base_form = currency
+        else:
+            currency_base_form = None
+            try:
+                cr1, cr2 = self.lr.CURRENCY_FORMS[currency]
+            except KeyError:
+                raise NotImplementedError(
+                    'Currency code "%s" not implemented for "%s"' %
+                    (currency, self.__class__.__name__))
+
+        minus_str = "%s " % self.negword if is_negative else ""
+        cents_str = self._cents_verbose(right, currency, case=case) \
+            if cents else self._cents_terse(right, currency) # TODO: what if you need to say 25,6 млн долларов
+
+        output = minus_str + self.to_cardinal(left, case=case) + ' '
+        output += self.pluralize(left, cr1, currency_base_form=currency_base_form, case=case)
+        if cents_str:
+            output += separator + ' ' + cents_str + ' '
+            output += self.pluralize(right, cr2, currency_base_form=currency_base_form, case=case)
+        return output
+
+    def decline(self, forms, currency_base_form=None, case=0): # select the right noun case
+        if isinstance(forms, tuple):
+            if currency_base_form:
+                return currency_base_form + forms[case]
+            return forms[case]
+        return forms
+
+    def pluralize(self, n, forms, currency_base_form=None, case=0): # select the right plural form of e.g. "dollars"
+        if not forms:
+            return ''
+        if n == 0:
+            return self.decline(forms[2], currency_base_form, case)
+        if n % 10 == 1:
+            return self.decline(forms[0], currency_base_form, case)
+        elif n % 10 <= 4 and n % 20 < 10: # the second condition means that numbers like 11, 12, 13, 14 use form 2
+            return self.decline(forms[1], currency_base_form, case)
+        return self.decline(forms[2], currency_base_form, case)
 
     def pluralize_thousand_potentials(self, n, i, case=0):
         if n % 100 < 10 or n % 100 > 20:
@@ -256,11 +345,11 @@ class Num2Word_RU(Num2Word_Base):
         m = 1
         if i > 1:
             m = 2
-        return THOUSANDS_BASE[i] + THOUSANDS[m][form][case]
+        return self.lr.THOUSANDS_BASE[i] + self.lr.THOUSANDS[m][form][case]
 
     def process_ordinal_word(self, word, ending):
-        if word[:-3] in self.ords_feminine:
-            word = self.ords_feminine.get(word[:-3], word) + "сот" + ending
+        if word[:-3] in self.lr.ORDS_FEMININE:
+            word = self.lr.ORDS_FEMININE.get(word[:-3], word) + "сот" + ending
         elif word[-1] == "ь" or word[-2] == "т":
             word = word[:-1] + ending
         elif word[-1] == "к": # 40 - сорок
@@ -278,17 +367,6 @@ class Num2Word_RU(Num2Word_Base):
             word = word[:word.rfind('д') + 1] + "н" + ending
         return word
 
-    def to_ordinal(self, number, num_gender=0, case=0):
-        my_num_gender = num_gender
-        my_case = case
-        m = re.match('(\d+)\-?(\p{L}{1,3})', number)
-        if m:
-            number = m.group(1)
-            suff = m.group(2)
-            if suff in self.ords_suff_map:
-                my_num_gender, my_case = self.ords_suff_map[suff]
-        return self.to_ordinal_num(int(number), num_gender=my_num_gender, case=my_case)
-
     def to_ordinal_num(self, number, num_gender=0, case=0):
     # optional num_gender: 0 (male), 1 (neutral), 2 (female) , 3 (plural)
     # optional case: from 0 (nominative) to 5 (prepositional)
@@ -296,33 +374,35 @@ class Num2Word_RU(Num2Word_Base):
         c = 1 if (number % 1000) == 0 else 0
         outwords = self.to_cardinal(number, case=c).split(' ')
         lastword = outwords[-1].lower()
-        if num_gender == 0 and case in [0, 3] and lastword in ['ноль', 'два', 'шесть', 'семь', 'восемь']:
-            ending = 'ой'
+        if num_gender == 0 and case in [0, 3] and lastword in self.lr.OY_ORDINALS:
+            ending = self.lr.ORD_SUFFIXES[2][1] # ой
         else:
-            ord_suffixes = self.ord_three if lastword == 'три' else self.ord_suffixes
+            ord_suffixes = self.lr.ORD_THREE if lastword == self.lr.ONES[3][0] else self.lr.ORD_SUFFIXES
             ending = ord_suffixes[num_gender][case]
         try:
             if len(outwords) > 1:
-                if outwords[-2] in self.ords_feminine:
-                    outwords[-2] = self.ords_feminine.get(outwords[-2], outwords[-2])
+                if outwords[-2] in self.lr.ORDS_FEMININE:
+                    outwords[-2] = self.lr.ORDS_FEMININE.get(outwords[-2], outwords[-2])
                 for i in range(0, 3):
-                    if lastword[:-i] in THOUSANDS_BASE.values():
-                        outwords[-2] = ORD_MAP.get(outwords[-2], outwords[-2])
+                    if lastword[:-i] in self.lr.THOUSANDS_BASE.values():
+                        outwords[-2] = self.lr.ORD_MAP.get(outwords[-2], outwords[-2])
                         if len(outwords) > 2:
-                            outwords[-3] = ORD_MAP.get(outwords[-3], outwords[-3])
+                            outwords[-3] = self.lr.ORD_MAP.get(outwords[-3], outwords[-3])
                         lastword = lastword[:-i]
                         break
             if len(outwords) == 3:
-                if outwords[-3] in ['один', 'одна', 'одного', 'одной']:
+                if outwords[-3] in self.lr.ORDS_SINGLE.keys():
                     outwords[-3] = ''
-            lastword = self.ord_stems[lastword] + ending
-        except KeyError: # for everything not in ord_stems
+            lastword = self.lr.ORD_STEMS[lastword] + ending
+        except KeyError: # for everything not in ORD_STEMS
             lastword = self.process_ordinal_word(lastword, ending)
         outwords[-1] = self.title(lastword)
         return " ".join(outwords).strip()
 
-    def _cents_verbose(self, number, currency):
-        return self._int2word(number, currency == 'RUB')
+    def _cents_verbose(self, number, currency, case=0):
+        if number == 0: # don't say "zero cents"
+            return ''
+        return self._int2word(number, currency == 'RUB', case=case)
 
 
     def _int2word(self, n, feminine=False, case=0):
@@ -330,37 +410,32 @@ class Num2Word_RU(Num2Word_Base):
         result = ''
         if n < 0:
             m = abs(n)
-            result += self.negword + ' '
+            result += self.lr.NEGWORD + ' '
         return self.my_int2word(m, feminine=feminine, case=case)
 
     def my_int2word(self, n, feminine=False, case=0):
         if n == 0:
-            return ZERO[case]
+            return self.lr.ZERO[case]
 
         words = []
         chunks = list(splitbyx(str(n), 3))
         i = len(chunks)
         for x in chunks:
             i -= 1
-
             if x == 0:
                 continue
-
             n1, n2, n3 = get_digits(x)
-
             if n3 > 0:
-                words.append(HUNDREDS[n3][case])
-
+                words.append(self.lr.HUNDREDS[n3][case])
             if n2 > 1:
-                words.append(TWENTIES[n2][case])
-
+                words.append(self.lr.TWENTIES[n2][case])
             if n2 == 1:
-                words.append(TENS[n1][case])
+                words.append(self.lr.TENS[n1][case])
             elif n1 > 0:
                 if i == 1 or (feminine and i == 0):
-                    ones = ONES_FEMININE
+                    ones = self.lr.ONES_FEMININE
                 else:
-                    ones = ONES
+                    ones = self.lr.ONES
                 mycase = case
                 if mycase == 3: # accusative
                     if i==0 and n1 <= 4 and (n2+n3) == 0:
@@ -376,15 +451,38 @@ class Num2Word_RU(Num2Word_Base):
 
 if __name__ == '__main__':
     yo = Num2Word_RU()
+    yo.lr.print_all_forms()
+
     import sys
-    for line in sys.stdin:
+    for line in ['14.22 10 150 2го 22-го 56/171 34х 1991 14.2 1016.53']:
         nums = line.strip().split()
         for num in nums:
-            for case in [0, 1, 2, 3, 4, 5]:
-                print(num, yo.to_cardinal(num, case=case))
-            for num_gender in [0, 1, 2, 3]:
-                for case in [0, 1, 2, 3, 4, 5]:
-                    print(num, yo.to_ordinal(num, num_gender=num_gender, case=case))
-            print(num, yo.to_currency(num, currency='RUB'))
-        sys.stdout.write("\n")
+            for case_name, case in yo.lr.NOUN_CASES.items():
+                try:
+                    print(case_name, num, yo.to_fraction(num, case=case))
+                except ValueError:
+                    pass
+                try:
+                    print(case_name, num, yo.to_year(num, case=case))
+                except ValueError:
+                    pass
+                try:
+                    print(case_name, num, yo.to_cardinal(num, case=case))
+                except ValueError:
+                    pass
+                try:
+                    print(case_name, num, yo.to_currency(num, currency='RUB', case=case))
+                    print(case_name, num, yo.to_currency(num, currency='USD', case=case))
+                    print(case_name, num, yo.to_currency(num, currency='EUR', case=case))
+                except ValueError:
+                    pass
+
+            for num_gender_name, num_gender in yo.lr.GENDERS.items():
+                for case_name, case in yo.lr.NOUN_CASES.items():
+                    try:
+                        print(num_gender_name, case_name, num, yo.to_ordinal(num, num_gender=num_gender, case=case))
+                    except ValueError:
+                        pass
+
+        # sys.stdout.write("\n")
 
