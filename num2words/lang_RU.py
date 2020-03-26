@@ -256,17 +256,17 @@ class Num2Word_RU(Num2Word_Base):
     def setup(self):
         self.lr = LanguageResources_RU()
 
-    def to_cardinal(self, number, case=0):
+    def to_cardinal(self, number, case=0, feminine=False, adjust_accusative=True):
         n = str(number).replace(',', '.')
         if '.' in n:
             left, right = n.split('.')
             return u'%s %s %s' % (
-                self._int2word(int(left), case=case),
+                self._int2word(int(left), case=case, feminine=feminine),
                 self.lr.POINTWORD,
-                self._int2word(int(right), case=case)
+                self._int2word(int(right), case=case, feminine=feminine)
             )
         else:
-            return self._int2word(int(n), case=case)
+            return self._int2word(int(n), case=case, feminine=feminine, adjust_accusative=adjust_accusative)
 
     def to_ordinal(self, number, num_gender=0, case=0):
         n = str(number)
@@ -281,23 +281,41 @@ class Num2Word_RU(Num2Word_Base):
         if m:
             nominator = m.group(1)
             denominator = m.group(2)
-            return self.to_cardinal(nominator, case) + ' ' + self.to_ordinal(denominator, num_gender=3, case=1)
+
+            res = self.to_cardinal(nominator, case=case, feminine=True) + ' '
+            n = int(nominator)
+            if n % 10 == 1 and (n % 100 != 11):
+                num_gender = 2
+                denom_case = case
+            else:
+                num_gender = 3
+                denom_case = 1 if case in [0, 3] else case
+            res += self.to_ordinal(denominator, num_gender=num_gender, case=denom_case)
+            return res
         else:
             raise ValueError(number)
 
-    def to_currency(self, val, currency='EUR', cents=True, separator='', case=0, currency_forms=None):
+    def to_currency(self, val, currency='EUR', cents=True, separator='', case=0):
         '''
         currency_forms: tuple (,)
         '''
         my_val = str(val).replace(',', '.')
         left, right, is_negative = parse_currency_parts(my_val)
-        if currency_forms:
-            cr1, cr2 = currency_forms
-            currency_base_form = currency
+        currency_unit_reading = ''
+        if isinstance(currency, list): # then the expected format is (currency_base_form, cr1))
+            for (currency_base_form, cr1) in currency:
+                if not cr1:
+                    cr1, cr2 = self.lr.CURRENCY_FORMS[currency_base_form]
+                    currency_base_form=None
+                currency_unit_reading += ' ' + self.pluralize(left, cr1, case=case,
+                                                              currency_base_form=currency_base_form)
+            cr2 = None
         else:
             currency_base_form = None
             try:
                 cr1, cr2 = self.lr.CURRENCY_FORMS[currency]
+                currency_unit_reading += ' ' + self.pluralize(left, cr1, case=case,
+                                                              currency_base_form=currency_base_form)
             except KeyError:
                 raise NotImplementedError(
                     'Currency code "%s" not implemented for "%s"' %
@@ -307,11 +325,12 @@ class Num2Word_RU(Num2Word_Base):
         cents_str = self._cents_verbose(right, currency, case=case) \
             if cents else self._cents_terse(right, currency) # TODO: what if you need to say 25,6 млн долларов
 
-        output = minus_str + self.to_cardinal(left, case=case) + ' '
-        output += self.pluralize(left, cr1, currency_base_form=currency_base_form, case=case)
+        output = minus_str + self.to_cardinal(left, case=case, adjust_accusative=False)
+        output += currency_unit_reading
         if cents_str:
-            output += separator + ' ' + cents_str + ' '
-            output += self.pluralize(right, cr2, currency_base_form=currency_base_form, case=case)
+            output += separator + ' ' + cents_str
+        if cr2:
+            output += ' ' + self.pluralize(right, cr2, currency_base_form=currency_base_form, case=case)
         return output
 
     def decline(self, forms, currency_base_form=None, case=0): # select the right noun case
@@ -328,7 +347,7 @@ class Num2Word_RU(Num2Word_Base):
             return self.decline(forms[2], currency_base_form, case)
         if n % 10 == 1:
             return self.decline(forms[0], currency_base_form, case)
-        elif n % 10 <= 4 and n % 20 < 10: # the second condition means that numbers like 11, 12, 13, 14 use form 2
+        elif n % 10 <= 4 and (n % 100 > 14 or n % 100 <= 10): # the second condition means that numbers like 11, 12, 13, 14 use form 2
             return self.decline(forms[1], currency_base_form, case)
         return self.decline(forms[2], currency_base_form, case)
 
@@ -405,15 +424,15 @@ class Num2Word_RU(Num2Word_Base):
         return self._int2word(number, currency == 'RUB', case=case)
 
 
-    def _int2word(self, n, feminine=False, case=0):
+    def _int2word(self, n, feminine=False, case=0, adjust_accusative=True):
         m = n
         result = ''
         if n < 0:
             m = abs(n)
             result += self.lr.NEGWORD + ' '
-        return self.my_int2word(m, feminine=feminine, case=case)
+        return self.my_int2word(m, feminine=feminine, case=case, adjust_accusative=adjust_accusative)
 
-    def my_int2word(self, n, feminine=False, case=0):
+    def my_int2word(self, n, feminine=False, case=0, adjust_accusative=True):
         if n == 0:
             return self.lr.ZERO[case]
 
@@ -437,10 +456,10 @@ class Num2Word_RU(Num2Word_Base):
                 else:
                     ones = self.lr.ONES
                 mycase = case
-                if mycase == 3: # accusative
+                if adjust_accusative and not feminine and mycase == 3:
                     if i==0 and n1 <= 4 and (n2+n3) == 0:
                         mycase = 1 # genetive form for individual digits <=4 only, only for stand-alone small numbers
-                # print("DEBUG: ", n1, mycase, len(ones), len(ones[n1]))
+                                   #    e.g. я вижу двух человек BUT: я вижу два миллиона
                 words.append(ones[n1][mycase])
 
             if i > 0:
@@ -454,7 +473,7 @@ if __name__ == '__main__':
     yo.lr.print_all_forms()
 
     import sys
-    for line in ['14.22 10 150 2го 22-го 56/171 34х 1991 14.2 1016.53']:
+    for line in ['1/4 14.22 10 150 2го 22-го 56/171 34х 1991 14.2 1016.53']:
         nums = line.strip().split()
         for num in nums:
             for case_name, case in yo.lr.NOUN_CASES.items():
@@ -474,7 +493,7 @@ if __name__ == '__main__':
                     print(case_name, num, yo.to_currency(num, currency='RUB', case=case))
                     print(case_name, num, yo.to_currency(num, currency='USD', case=case))
                     print(case_name, num, yo.to_currency(num, currency='EUR', case=case))
-                except ValueError:
+                except:
                     pass
 
             for num_gender_name, num_gender in yo.lr.GENDERS.items():
