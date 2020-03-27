@@ -28,33 +28,38 @@ def get_ord_map(mydict):
         result[val[0]] = val[1]
     return result
 
-def print_forms(mapping, pref=''):
+def print_forms(mapping, out, pref=''):
     for v in mapping.values():
         for x in v:
-            print(pref+x)
+            print(pref+x, file=out)
 
 class LanguageResources_RU:
 
-    def print_all_forms(self):
+    def print_all_forms(self, filename):
+        if filename:
+            out = open(filename, 'wt')
+        else:
+            import sys
+            out = sys.stdin
         for v in self.ZERO:
-            print(v)
-        print_forms(self.ONES_FEMININE)
-        print_forms(self.ONES)
-        print_forms(self.TENS)
-        print_forms(self.TWENTIES)
-        print_forms(self.HUNDREDS)
-        print(self.NEGWORD)
-        print(self.POINTWORD)
+            print(v, file=out)
+        print_forms(self.ONES_FEMININE, out)
+        print_forms(self.ONES, out)
+        print_forms(self.TENS, out)
+        print_forms(self.TWENTIES, out)
+        print_forms(self.HUNDREDS, out)
+        print(self.NEGWORD, file=out)
+        print(self.POINTWORD, file=out)
         for v in self.THOUSANDS_BASE.values():
            for x in self.THOUSANDS.values():
                for y in x:
                    for z in y:
-                       print(v+z)
+                       print(v+z, file=out)
         for v in self.ORD_STEMS.values():
-            print_forms(self.ORD_SUFFIXES, v)
-            print_forms(self.ORD_THREE, v)
+            print_forms(self.ORD_SUFFIXES, out, v)
+            print_forms(self.ORD_THREE, out, v)
         for x in self.ORDS_FEMININE.values():
-            print(x)
+            print(x, file=out)
 
     def __init__(self):
         self.NOUN_CASES = {'nom': 0,
@@ -217,6 +222,8 @@ class LanguageResources_RU:
                           "восемь": "восьм",
                           "девять": "девят",
                           "сто": "сот"}
+        self.FLOAT_INTEGER_PART = 'цел'
+
         for x in self.THOUSANDS_BASE.values():
             self.ORD_STEMS[x] = x + 'н'
 
@@ -256,14 +263,19 @@ class Num2Word_RU(Num2Word_Base):
     def setup(self):
         self.lr = LanguageResources_RU()
 
-    def to_cardinal(self, number, case=0, feminine=False, adjust_accusative=True):
+    def to_cardinal(self, number, case=0, feminine=False, adjust_accusative=True, use_float_words=False, connector=None):
         n = str(number).replace(',', '.')
         if '.' in n:
             left, right = n.split('.')
-            return u'%s %s %s' % (
-                self._int2word(int(left), case=case, feminine=feminine),
-                self.lr.POINTWORD,
-                self._int2word(int(right), case=case, feminine=feminine)
+            float_word_left = 0 if use_float_words else None
+            float_word_right = len(right)*10 if use_float_words else None
+            point_word = connector if connector != None else self.lr.POINTWORD
+            if len(point_word):
+                point_word += ' '
+            return u'%s %s%s' % (
+                self._int2word(int(left), case=case, feminine=feminine, float_word=float_word_left),
+                point_word,
+                self._int2word(int(right), case=case, feminine=feminine, float_word=float_word_right)
             )
         else:
             return self._int2word(int(n), case=case, feminine=feminine, adjust_accusative=adjust_accusative)
@@ -390,7 +402,7 @@ class Num2Word_RU(Num2Word_Base):
     # optional num_gender: 0 (male), 1 (neutral), 2 (female) , 3 (plural)
     # optional case: from 0 (nominative) to 5 (prepositional)
         self.verify_ordinal(number)
-        c = 1 if (number % 1000) == 0 else 0
+        c = 1 if (number != 0) and (number % 1000) == 0 else 0
         outwords = self.to_cardinal(number, case=c).split(' ')
         lastword = outwords[-1].lower()
         if num_gender == 0 and case in [0, 3] and lastword in self.lr.OY_ORDINALS:
@@ -424,15 +436,23 @@ class Num2Word_RU(Num2Word_Base):
         return self._int2word(number, currency == 'RUB', case=case)
 
 
-    def _int2word(self, n, feminine=False, case=0, adjust_accusative=True):
+    def _int2word(self, n, feminine=False, case=0, adjust_accusative=True, float_word=None):
         m = n
         result = ''
         if n < 0:
             m = abs(n)
             result += self.lr.NEGWORD + ' '
-        return self.my_int2word(m, feminine=feminine, case=case, adjust_accusative=adjust_accusative)
+        return self.my_int2word(m, feminine=feminine, case=case,
+                                adjust_accusative=adjust_accusative, float_word=float_word)
 
-    def my_int2word(self, n, feminine=False, case=0, adjust_accusative=True):
+    def my_int2word(self, n, feminine=False, case=0, adjust_accusative=True, float_word=None):
+        if float_word != None: # e.g. 7 целых 5 десятых
+            float_word_realization = self.to_fraction(str(n) + '/' + str(float_word), case=case)
+            if float_word == 0:
+                float_word_realization = float_word_realization.replace(self.lr.ORD_STEMS[self.lr.ZERO[0]],
+                                                                        self.lr.FLOAT_INTEGER_PART)
+            return float_word_realization
+
         if n == 0:
             return self.lr.ZERO[case]
 
@@ -464,16 +484,15 @@ class Num2Word_RU(Num2Word_Base):
 
             if i > 0:
                 words.append(self.pluralize_thousand_potentials(x, i, case))
-
         return ' '.join(words)
 
 
 if __name__ == '__main__':
     yo = Num2Word_RU()
-    yo.lr.print_all_forms()
+    yo.lr.print_all_forms('num2words.wordforms.ru')
 
     import sys
-    for line in ['1/4 14.22 10 150 2го 22-го 56/171 34х 1991 14.2 1016.53']:
+    for line in ['1/4 14.22 10 150 2го 22-го 56/171 34х 1991 14.2 1016.53 0']:
         nums = line.strip().split()
         for num in nums:
             for case_name, case in yo.lr.NOUN_CASES.items():
