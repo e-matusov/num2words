@@ -50,7 +50,7 @@ class LanguageResources_UK:
             out = open(filename, 'wt')
         else:
             import sys
-            out = sys.stdin
+            out = sys.stdout
         for v in self.ZERO:
             print(v, file=out)
         print_forms(self.ONES_FEMININE, out)
@@ -60,6 +60,7 @@ class LanguageResources_UK:
         print_forms(self.HUNDREDS, out)
         print(self.NEGWORD, file=out)
         print(self.POINTWORD, file=out)
+
         for v in self.THOUSANDS_BASE.values():
            for x in self.THOUSANDS.values():
                for y in x:
@@ -99,18 +100,25 @@ class LanguageResources_UK:
         self.ONES[1] = ('один', 'одного', 'одного', 'одному', 'одному', 'один', 'одного', 'одним', 'одним', 'однім', 'одному')
         self.ONES[2] = ('два', 'двох', 'двох', 'двом', 'двом', 'два', 'двох', 'двома', 'двома', 'двох', 'двох')
 
-        tens_suffixes = ('ь', 'и', 'ьох', 'и', 'ьом',  'ь',  'ьох', 'ьма',  'ьома',  'и', 'ьох')
-        tens_stems = ('десять', 'одинадцять', 'дванадцять', 'тринадцять', 'чотирнадцять' "п'ятнадцять",
+        tens_suffixes = ('ь', 'и', 'ьох', 'и', 'ьом', 'ь', 'ьох', 'ьма', 'ьома', 'и', 'ьох')
+        tens_stems = ('десять', 'одинадцять', 'дванадцять', 'тринадцять', 'чотирнадцять', "п'ятнадцять",
                       'шістнадцять', 'сімнадцять', 'вісімнадцять', "дев'ятнадцять")
         self.TENS = {}
         for n, stem in enumerate(tens_stems):
-           self.TENS[n] = stem[:-1] + tens_suffixes[n] # remove the soft sign from stem first
+            forms = []
+            self.TENS[n] = ()
+            for suff in tens_suffixes:
+                forms.append(stem[:-1] + suff) # remove the soft sign from stem first
+            self.TENS[n] = tuple(forms)
         self.ORD_MAP = get_ord_map(self.TENS)
 
         twenties_stems = ('двадцят', 'тридцят', 'сорок', "п'ятдесят", 'шістдесят', 'сімдесят', 'вісімдесят')
         self.TWENTIES = {}
         for n, stem in enumerate(twenties_stems):
-            self.TWENTIES[n+2] = stem + tens_suffixes[n] # start from 2
+            forms = []
+            for suff in tens_suffixes:
+                forms.append(stem + suff) # start from 2
+            self.TWENTIES[n+2] = tuple(forms)
         self.TWENTIES[4] = ('сорок', 'сорока', 'сорока', 'сорока', 'сорока', 'сорок', 'сорок', 'сорока', 'сорока', 'сорока', 'сорока') # overwrite
         self.TWENTIES[9] = ("дев'яносто", "дев'яноста", "дев'яноста", "дев'яноста", "дев'яноста", "дев'яносто", "дев'яносто",
                             "дев'яноста", "дев'яноста", "дев'яноста", "дев'яноста")
@@ -120,7 +128,7 @@ class LanguageResources_UK:
             1: clone_case_variants(('сто', 'ста', 'стам', 'сто', 'ста', 'ста')),
             2: clone_case_variants(('двісті', 'двохсот', 'двомстам', 'двісті', 'двомастами', 'двохстах')),
             3: clone_case_variants(('триста', 'трьохсот', 'трьомстам', 'триста', 'трьомастами', 'трьохстах')),
-            4: clone_case_variants(('чотириста', 'чотирьохсо́т', 'чотирьомста́м', 'чоти́риста', 'чотирмаста́ми', 'чотирьохста́х')),
+            4: clone_case_variants(('чотириста', 'чотирьохсот', 'чотирьомстам', 'чотириста', 'чотирмастами', 'чотирьохстах')),
             5: clone_case_variants(("п'ятсот", "п'ятисот", "п'ятистам", "п'ятсот", "п'ятьмастами", "п'ятистах")),
             6: clone_case_variants(('шістсот', 'шестисот', 'шестистам', 'шістсот', 'шістьмастами', 'шестистах')),
             7: clone_case_variants(('сімсот', 'семисот', 'семистам', 'сімсот', 'сьомастами', 'семистах')),
@@ -169,7 +177,7 @@ class LanguageResources_UK:
         self.CURRENCY_FORMS = {
             'RUB': (
                 (clone_case_variants(('рубель', 'рубля', 'рублю', 'рубель', 'рублём', 'рублю')),
-                 clone_case_variants(('рублі', 'рублів', 'рублям', 'рублі', 'рублями', 'рублях')),
+                 clone_case_variants(('рубля', 'рублів', 'рублям', 'рубля', 'рублями', 'рублях')),
                  clone_case_variants(('рублів', 'рублів', 'рублям', 'рублі', 'рублями', 'рублях'))),
                 (clone_case_variants(('копійка', 'копійки', 'копійці', 'копійку', 'копійкою', 'копійці')),
                  clone_case_variants(('копійки', 'копійок', 'копійкам', 'копійки', 'копійками', 'копійках')),
@@ -177,15 +185,15 @@ class LanguageResources_UK:
             ),
             'EUR': (
                 ('євро', 'євро', 'євро'),
-                (('цент', 'цента', 'цента', 'центу', 'центові', 'цент', 'цент', 'центом', 'центом', 'центу', 'центу'),
+                (('цент', 'цента', 'цента', 'центу', 'центові', 'цент', 'цент', 'центом', 'центом', 'центі', 'центі'),
                  ('центі', 'цента', 'центі', 'центам', 'центам', 'центі', 'цента', 'центами', 'центами', 'центах', 'центі'),
                  ('центів', 'центів', 'центів', 'центам', 'центам', 'центі', 'центи', 'центами', 'центами', 'центах', 'центі')),
             ),
             'USD': (
-                (('долар', 'долара', 'долару', 'доллар', 'долларом', 'долларе'),
-                 ('доллара', 'долларов', 'долларам', 'доллара', 'долларами', 'долларах'),
-                 ('долларов', 'долларов', 'долларам', 'долларов', 'долларами', 'долларах')),
-                (('цент', 'цента', 'цента', 'центу', 'центові', 'цент', 'цент', 'центом', 'центом', 'центу', 'центу'),
+                (('долар', 'долара', 'долара', 'долару', 'доларові', 'долар', 'долар', 'доларом', 'доларом', 'доларі', 'доларі'),
+                 ('долара', 'доларів', 'доларів', 'доларам', 'доларам', 'долара', 'долара', 'доларами', 'доларами', 'доларах', 'доларах'),
+                 ('доларів', 'доларів', 'доларів', 'доларам', 'доларам', 'доларів', 'доларів', 'доларами', 'доларами', 'доларах', 'доларах')),
+                (('цент', 'цента', 'цента', 'центу', 'центові', 'цент', 'цент', 'центом', 'центом', 'центі', 'центі'),
                  ('центі', 'цента', 'центі', 'центам', 'центам', 'центі', 'цента', 'центами', 'центами', 'центах', 'центі'),
                  ('центів', 'центів', 'центів', 'центам', 'центам', 'центі', 'центи', 'центами', 'центами', 'центах', 'центі')),
             ),
@@ -212,16 +220,16 @@ class LanguageResources_UK:
                              2: ('а', 'ої', 'ої', 'ій', 'ій', 'у', 'у', 'ою', 'ою', 'ій', 'ій'),
                              3: ('і', 'их', 'их', 'им', 'им', 'и', 'их', 'ими', 'ими', 'их', 'их')}
 
-        self.ORD_STEMS = {"ноль": "нульов",
+        self.ORD_STEMS = {"нуль": "нульов",
                           "один": "перш",
                           "два": "друг",
                           "три": "трет",
-                          "четыре": "четверт",
-                          "пять": "п'ят",
-                          "шесть": "шост",
-                          "семь": "сьом",
-                          "восемь": "восьм",
-                          "девять": "дев'ят",
+                          "чотири": "четверт",
+                          "п'ять": "п'ят",
+                          "шiсть": "шост",
+                          "сім": "сьом",
+                          "вісім": "восьм",
+                          "дев\'ять": "дев'ят",
                           "сто": "сот"}
         self.FLOAT_INTEGER_PART = 'ціл'
 
@@ -231,7 +239,7 @@ class LanguageResources_UK:
         self.ORDS_SINGLE = {"один": "одна",
                             "одна": "одна",
                             "одного": "одна",
-                            "одної": "одна"
+                            "одної": "одна",
                             "однієї": "одна"
                            }
         self.ORDS_FEMININE = {}
@@ -249,7 +257,7 @@ class Num2Word_UK(Num2Word_Base):
         if '.' in n:
             left, right = n.split('.')
             float_word_left = 0 if use_float_words else None
-            float_word_right = len(right)*10 if use_float_words else None
+            float_word_right = 10**len(right) if use_float_words else None
             point_word = connector if connector != None else self.lr.POINTWORD
             if len(point_word):
                 point_word += ' '
@@ -466,39 +474,43 @@ class Num2Word_UK(Num2Word_Base):
 
 
 if __name__ == '__main__':
-    yo = Num2Word_RU()
-    yo.lr.print_all_forms('num2words.wordforms.ru')
+    yo = Num2Word_UK()
+    yo.lr.print_all_forms('num2words.wordforms.uk')
 
     import sys
     for line in ['1/4 14.22 10 150 2го 22-го 56/171 34х 1991 14.2 1016.53 0']:
         nums = line.strip().split()
         for num in nums:
-            for case_name, case in yo.lr.NOUN_CASES.items():
-                try:
-                    print(case_name, num, yo.to_fraction(num, case=case))
-                except ValueError:
-                    pass
-                try:
-                    print(case_name, num, yo.to_year(num, case=case))
-                except ValueError:
-                    pass
-                try:
-                    print(case_name, num, yo.to_cardinal(num, case=case))
-                except ValueError:
-                    pass
-                try:
-                    print(case_name, num, yo.to_currency(num, currency='RUB', case=case))
-                    print(case_name, num, yo.to_currency(num, currency='USD', case=case))
-                    print(case_name, num, yo.to_currency(num, currency='EUR', case=case))
-                except:
-                    pass
-
-            for num_gender_name, num_gender in yo.lr.GENDERS.items():
-                for case_name, case in yo.lr.NOUN_CASES.items():
+            for case_name, case_variants in yo.lr.NOUN_CASES.items():
+                c = case_variants if isinstance(case_variants, tuple) else [case_variants]
+                for case in c:
                     try:
-                        print(num_gender_name, case_name, num, yo.to_ordinal(num, num_gender=num_gender, case=case))
+                        print(case_name, num, yo.to_fraction(num, case=case))
                     except ValueError:
                         pass
+                    try:
+                        print(case_name, num, yo.to_year(num, case=case))
+                    except ValueError:
+                        pass
+                    try:
+                        print(case_name, num, yo.to_cardinal(num, case=case))
+                    except ValueError:
+                        pass
+                    try:
+                        print(case_name, num, yo.to_currency(num, currency='RUB', case=case))
+                        print(case_name, num, yo.to_currency(num, currency='USD', case=case))
+                        print(case_name, num, yo.to_currency(num, currency='EUR', case=case))
+                    except:
+                        pass
+
+            for num_gender_name, num_gender in yo.lr.GENDERS.items():
+                for case_name, case_variants in yo.lr.NOUN_CASES.items():
+                    c = case_variants if isinstance(case_variants, tuple) else [case_variants]
+                    for case in c:
+                        try:
+                            print(num_gender_name, case_name, num, yo.to_ordinal(num, num_gender=num_gender, case=case))
+                        except ValueError:
+                            pass
 
         # sys.stdout.write("\n")
 
