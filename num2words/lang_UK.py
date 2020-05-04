@@ -324,7 +324,7 @@ class Num2Word_UK(Num2Word_Base):
 
         minus_str = "%s " % self.negword if is_negative else ""
         cents_str = self._cents_verbose(right, currency, case=case) \
-            if cents else self._cents_terse(right, currency) # TODO: what if you need to say 25,6 млн долларов
+            if cents else self._cents_terse(right, currency)
 
         output = minus_str + self.to_cardinal(left, case=case, adjust_accusative=False)
         output += currency_unit_reading
