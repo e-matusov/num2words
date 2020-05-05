@@ -25,7 +25,10 @@ from .currency import parse_currency_parts, prefix_currency
 def get_ord_map(mydict):
     result = {}
     for val in mydict.values():
-        result[val[0]] = val[1]
+        x = val[1]
+        if x.endswith('и') or x.endswith('а'):
+            x = x[:-1]
+        result[val[0]] = x
     return result
 
 def print_forms(mapping, out, pref=''):
@@ -368,7 +371,9 @@ class Num2Word_UK(Num2Word_Base):
         return self.lr.THOUSANDS_BASE[i] + self.lr.THOUSANDS[m][form][case]
 
     def process_ordinal_word(self, word, ending):
-        if word[:-3] in self.lr.ORDS_FEMININE:
+        if word in self.lr.ORD_MAP:
+            word = self.lr.ORD_MAP[word] + ending
+        elif word[:-3] in self.lr.ORDS_FEMININE:
             word = self.lr.ORDS_FEMININE.get(word[:-3], word) + "сот" + ending
         elif word[-1] == "ь" or word[-2] == "т":
             word = word[:-1] + ending
@@ -475,34 +480,19 @@ class Num2Word_UK(Num2Word_Base):
 
 if __name__ == '__main__':
     yo = Num2Word_UK()
-    yo.lr.print_all_forms('num2words.wordforms.uk')
+#    yo.lr.print_all_forms('num2words.wordforms.uk')
 
     import sys
-    for line in ['1/4 14.22 10 150 2го 22-го 56/171 34х 1991 14.2 1016.53 0']:
+    for line in sys.stdin: # ['300 301 311 1/4 14.22 10 150 2го 22-го 56/171 34х 1991 14.2 1016.53 0']:
         nums = line.strip().split()
         for num in nums:
             for case_name, case_variants in yo.lr.NOUN_CASES.items():
                 c = case_variants if isinstance(case_variants, tuple) else [case_variants]
                 for case in c:
                     try:
-                        print(case_name, num, yo.to_fraction(num, case=case))
-                    except ValueError:
-                        pass
-                    try:
-                        print(case_name, num, yo.to_year(num, case=case))
-                    except ValueError:
-                        pass
-                    try:
                         print(case_name, num, yo.to_cardinal(num, case=case))
                     except ValueError:
                         pass
-                    try:
-                        print(case_name, num, yo.to_currency(num, currency='RUB', case=case))
-                        print(case_name, num, yo.to_currency(num, currency='USD', case=case))
-                        print(case_name, num, yo.to_currency(num, currency='EUR', case=case))
-                    except:
-                        pass
-
             for num_gender_name, num_gender in yo.lr.GENDERS.items():
                 for case_name, case_variants in yo.lr.NOUN_CASES.items():
                     c = case_variants if isinstance(case_variants, tuple) else [case_variants]
