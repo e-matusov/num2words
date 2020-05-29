@@ -21,6 +21,7 @@ from .base import Num2Word_Base
 from .utils import get_digits, splitbyx
 import regex as re
 from .currency import parse_currency_parts, prefix_currency
+import sys
 
 def print_forms(mapping, out, pref=''):
     for v in mapping.values():
@@ -44,16 +45,13 @@ class LanguageResources_BG:
         print_forms(self.HUNDREDS, out)
         print(self.NEGWORD, file=out)
         print(self.POINTWORD, file=out)
-
-        for v in self.THOUSANDS_BASE.values():
-           for x in self.THOUSANDS.values():
-               for y in x:
-                   for z in y:
-                       print(v+z, file=out)
-        for v in self.ORD_STEMS.values():
-            print_forms(self.ORD_SUFFIXES, out, v)
-        for x in self.ORDS_FEMININE.values():
-            print(x, file=out)
+        for x in self.THOUSANDS.values():
+            for y in x:
+               print(y, file=out)
+        for v in self.ORD_STEMS_1.values():
+            print_forms(self.ORD_SUFFIXES_1, out, v)
+        for v in self.ORD_STEMS_2.values():
+            print_forms(self.ORD_SUFFIXES_2, out, v)
 
     def __init__(self):
         self.NOUN_CASES = {'nom': 0, # nominative
@@ -69,13 +67,23 @@ class LanguageResources_BG:
                              ('нулева', 'нулевата'),
                              ('нулеви', 'нулевите'))
 
+        self.number_offsets = [3, 1, 1] # ones, tens, hundreds, thousands ... max offset (e.g. 3 offset levels of 11, 21, 31 in ONES)
         self.ONES_FEMININE = {
             1: ('една', 'едната'),
+            11: ('един', 'единия'),
+            21: ('едно', 'едното'),
+            31: ('един', 'единият'),
             2: ('две', 'двете'),
+            12: ('двама', 'двамата'),
+            22: ('два', 'двата'),
             3: ('три', 'трите'),
+            13: ('трима', 'тримата'),
             4: ('четири', 'четирите'),
+            14: ('четирима', 'четиримата'),
             5: ('пет', 'петте'),
+            15: ('петима', 'петимата'),
             6: ('шест', 'шестте'),
+            16: ('шестима', 'шестимата'),
             7: ('седем', 'седемте'),
             8: ('осем', 'осемте' ),
             9: ('девет', 'деветте'),
@@ -83,24 +91,39 @@ class LanguageResources_BG:
         self.ONES = self.ONES_FEMININE.copy()
         self.ONES[1] = ('един', 'единия') # ALSO: единият !
         self.ONES[2] = ('два', 'двата')
+        x = 'четиринадесет[_/те]|четиринайсет[_/те]'
 
         self.TENS = { 0: ('десет', 'десетте'),
-                      1: ('единадесет', 'единадесетте', 'единайсет', 'единайсетте'),
-                      2: ('дванадесет', 'дванадесетте', 'дванайсет', 'дванайсетте'),
-                      3: ('тринадесет', 'тринадесетте', 'тринайсет', 'тринайсетте'),
-                      4: ('четиринадесет', 'четиринадесетте', 'четиринайсет', 'четиринайсетте'),
-                      5: ('петнадесет', 'петнадесетте', 'петнайсет', 'петнайсетте'),
-                      6: ('шестнадесет', 'шестнадесетте', 'шестнайсет', 'шесинайсетте'),
-                      7: ('седемнадесет', 'седемнадесетте', 'седемнайсет', 'седемнайсетте'),
-                      8: ('осемнадесет', 'осемнадесетте', 'осемнайсет', 'осемнайсетте'),
-                      9: ('деветнадесет', 'деветнадесетте', 'деветнайсет', 'деветнайсетте'),
+                      1: ('единадесет', 'единадесетте'),
+                      11: ('единайсет', 'единайсетте'),
+                      2: ('дванадесет', 'дванадесетте'),
+                      12: ('дванайсет', 'дванайсетте'),
+                      3: ('тринадесет', 'тринадесетте'),
+                      13: ('тринайсет', 'тринайсетте'),
+                      4: ('четиринадесет', 'четиринадесетте'),
+                      14: ('четиринайсет', 'четиринайсетте'),
+                      5: ('петнадесет', 'петнадесетте'),
+                      15: ('петнайсет', 'петнайсетте'),
+                      6: ('шестнадесет', 'шестнадесетте'),
+                      16: ('шестнайсет', 'шесинайсетте'),
+                      7: ('седемнадесет', 'седемнадесетте'),
+                      17: ('седемнайсет', 'седемнайсетте'),
+                      8: ('осемнадесет', 'осемнадесетте'),
+                      18: ('осемнайсет', 'осемнайсетте'),
+                      9: ('деветнадесет', 'деветнадесетте'),
+                      19: ('деветнайсет', 'деветнайсетте'),
                     }
 
-        self.TWENTIES = {2: ('двадесет', 'двадесетте', 'двайсет', 'двайсетте'), # TODO: the last two forms should be used outside of num2words?
-                         3: ('тридесет', 'тридесетте', 'трийсет', 'трийсетте'),
-                         4: ('четиридесет', 'четиридесетте', 'четирийсет', 'четирийсетте'),
+        self.TWENTIES = {
+                         2: ('двадесет', 'двадесетте'),
+                         12: ('двайсет', 'двайсетте'),
+                         3: ('тридесет', 'тридесетте'),
+                         13: ('трийсет', 'трийсетте'),
+                         4: ('четиридесет', 'четиридесетте'),
+                         14: ('четирийсет', 'четирийсетте'),
                          5: ('петдесет', 'петдесетте'),
-                         6: ('шестдесет', 'шестдесетте', 'шейсет', 'шейсетте'),
+                         6: ('шестдесет', 'шестдесетте'),
+                         16: ('шейсет', 'шейсетте'),
                          7: ('седемдесет', 'седемдесетте'),
                          8: ('осемдесет', 'осемдесетте'),
                          9: ('деветдесет', 'деветдесетте'),
@@ -109,6 +132,7 @@ class LanguageResources_BG:
         self.HUNDREDS = {
             1: ('сто', 'стоте'),
             2: ('двеста', 'двестата'),
+            12: ('двесте', 'двестете'),
             3: ('триста', 'тристата'),
             4: ('четиристотин', 'четиристотинте'),
             5: ("петстотин", "петстотинте"),
@@ -144,38 +168,8 @@ class LanguageResources_BG:
             10: 'нонилион'
         }
 
-        #self.CURRENCY_FORMS = {
-            #'RUB': (
-                #(clone_case_variants(('рубель', 'рубля', 'рублю', 'рубель', 'рублём', 'рублю')),
-                 #clone_case_variants(('рубля', 'рублів', 'рублям', 'рубля', 'рублями', 'рублях')),
-                 #clone_case_variants(('рублів', 'рублів', 'рублям', 'рублі', 'рублями', 'рублях'))),
-                #(clone_case_variants(('копійка', 'копійки', 'копійці', 'копійку', 'копійкою', 'копійці')),
-                 #clone_case_variants(('копійки', 'копійок', 'копійкам', 'копійки', 'копійками', 'копійках')),
-                 #clone_case_variants(('копійок', 'копійок', 'копійкам', 'копійок', 'копійками', 'копійках')))
-            #),
-            #'EUR': (
-                #('євро', 'євро', 'євро'),
-                #(('цент', 'цента', 'цента', 'центу', 'центові', 'цент', 'цент', 'центом', 'центом', 'центі', 'центі'),
-                 #('центі', 'цента', 'центі', 'центам', 'центам', 'центі', 'цента', 'центами', 'центами', 'центах', 'центі'),
-                 #('центів', 'центів', 'центів', 'центам', 'центам', 'центі', 'центи', 'центами', 'центами', 'центах', 'центі')),
-            #),
-            #'USD': (
-                #(('долар', 'долара', 'долара', 'долару', 'доларові', 'долар', 'долар', 'доларом', 'доларом', 'доларі', 'доларі'),
-                 #('долара', 'доларів', 'доларів', 'доларам', 'доларам', 'долара', 'долара', 'доларами', 'доларами', 'доларах', 'доларах'),
-                 #('доларів', 'доларів', 'доларів', 'доларам', 'доларам', 'доларів', 'доларів', 'доларами', 'доларами', 'доларах', 'доларах')),
-                #(('цент', 'цента', 'цента', 'центу', 'центові', 'цент', 'цент', 'центом', 'центом', 'центі', 'центі'),
-                 #('центі', 'цента', 'центі', 'центам', 'центам', 'центі', 'цента', 'центами', 'центами', 'центах', 'центі'),
-                 #('центів', 'центів', 'центів', 'центам', 'центам', 'центі', 'центи', 'центами', 'центами', 'центах', 'центі')),
-            #),
-            #'UAH': (
-                #(clone_case_variants(('гривня', 'гривні', 'гривні', 'гривню', 'гривнею', 'гривні')),
-                 #clone_case_variants(('гривні', 'гривень', 'гривням', 'гривні', 'гривнями', 'гривнах')),
-                 #clone_case_variants(('гривень', 'гривень', 'гривням', 'гривень', 'гривнями', 'гривнях'))),
-                #(clone_case_variants(('копійка', 'копійки', 'копійці', 'копійку', 'копійкою', 'копійці')),
-                 #clone_case_variants(('копійки', 'копійок', 'копійкам', 'копійки', 'копійками', 'копійках')),
-                 #clone_case_variants(('копійок', 'копійок', 'копійкам', 'копійок', 'копійками', 'копійках')))
-            #)
-        #}
+        self.CURRENCY_FORMS = {} # will be handled via newtn
+
         self.AND = 'и'
         self.NEGWORD = "минус"
         self.POINTWORD = "запетая"
@@ -235,7 +229,7 @@ class Num2Word_BG(Num2Word_Base):
     def setup(self):
         self.lr = LanguageResources_BG()
 
-    def to_cardinal(self, number, case=0, feminine=False, use_float_words=False, connector=None):
+    def to_cardinal(self, number, case=0, feminine=False, offsets=[], use_float_words=False, connector=None):
         n = str(number).replace(',', '.')
         if '.' in n:
             left, right = n.split('.')
@@ -250,7 +244,7 @@ class Num2Word_BG(Num2Word_Base):
                 self._int2word(int(right), case=case, feminine=feminine, float_word=float_word_right)
             )
         else:
-            return self._int2word(int(n), case=case, feminine=feminine)
+            return self._int2word(int(n), case=case, feminine=feminine, offsets=offsets)
 
     def to_ordinal(self, number, num_gender=0, case=0):
         n = str(number)
@@ -270,10 +264,10 @@ class Num2Word_BG(Num2Word_Base):
             n = int(nominator)
             if n % 10 == 1 and (n % 100 != 11):
                 num_gender = 2
-                denom_case = case
+                denom_case = 0
             else:
                 num_gender = 3
-                denom_case = 1 if case in [0, 3] else case
+                denom_case = 0 # 1 if case in [0, 3] else case
             res += self.to_ordinal(denominator, num_gender=num_gender, case=denom_case)
             return res
         else:
@@ -378,19 +372,36 @@ class Num2Word_BG(Num2Word_Base):
         return self._int2word(number, currency == 'USD', case=case)
 
 
-    def _int2word(self, n, feminine=False, case=0, adjust_accusative=True, float_word=None):
+    def _int2word(self, n, feminine=False, case=0, offsets=[], adjust_accusative=True, float_word=None):
         m = n
         result = ''
         if n < 0:
             m = abs(n)
             result += self.lr.NEGWORD + ' '
-        return self.my_int2word(m, feminine=feminine, case=case, float_word=float_word)
+        return self.my_int2word(m, feminine=feminine, case=case, offsets=offsets, float_word=float_word)
 
-    def my_int2word(self, n, feminine=False, case=0, adjust_accusative=True, float_word=None):
+    def get_digits_with_offsets(self, chunk, offsets, i):
+        triple = get_digits(chunk)
+        if i > 0:
+            return triple
+        for n in range(len(offsets)):
+            offset = 10*offsets[n]
+            if n == 0 and triple[0] > 0 and (triple[0] + offset) in self.lr.ONES:
+                triple[0] += offset
+            elif n == 1:
+                if triple[1] == 1 and (triple[1] + offset) in self.lr.TENS:
+                    triple[1] += offset
+                elif triple[1] > 1 and (triple[1] + offset) in self.lr.TWENTIES:
+                    triple[1] += offset
+            elif n==2 and triple[2] > 0 and (triple[2] + offset) in self.lr.HUNDREDS:
+                triple[2] += offset
+        return triple
+
+    def my_int2word(self, n, feminine=False, case=0, offsets=[], adjust_accusative=True, float_word=None):
         if float_word != None: # e.g. 7 целых 5 десятых
             float_word_realization = self.to_fraction(str(n) + '/' + str(float_word), case=case)
             if float_word == 0:
-                float_word_realization = float_word_realization.replace(self.lr.ORD_STEMS[self.lr.ZERO[0]],
+                float_word_realization = float_word_realization.replace(self.lr.ORD_STEMS_1[self.lr.ZERO[0]],
                                                                         self.lr.FLOAT_INTEGER_PART)
             return float_word_realization
 
@@ -404,7 +415,7 @@ class Num2Word_BG(Num2Word_Base):
             i -= 1
             if x == 0:
                 continue
-            n1, n2, n3 = get_digits(x)
+            n1, n2, n3 = self.get_digits_with_offsets(x, offsets, i)
             n1_case = n2_case = n3_case = 0
             if case == 1 and i == 0:
                 if n1 > 0:
@@ -428,8 +439,8 @@ class Num2Word_BG(Num2Word_Base):
                     words.append(self.lr.AND)
                 words.append(ones[n1][n1_case])
             if i > 0:
-                print("DEBUG", i, n1, n2, n3, len(chunks))
-                words.append(self.lr.THOUSANDS[i][0]) # TODO: check if this is correct
+                # print("DEBUG", i, n1, n2, n3, len(chunks))
+                words.append(self.lr.THOUSANDS[i][0])
         return ' '.join(words)
 
 
@@ -453,7 +464,8 @@ if __name__ == '__main__':
                     #except ValueError:
                         #pass
                     try:
-                        print("CARDINAL", case_name, num, yo.to_cardinal(num, case=case))
+                        print("CARDINAL:", case_name, num, yo.to_cardinal(num, case=case))
+                        print("EXPERIMENTAL:", yo.my_int2word(int(num), feminine=False, case=case, offsets=[1,1,1]))
                     except ValueError:
                         pass
  #                   try:
