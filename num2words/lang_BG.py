@@ -38,7 +38,6 @@ class LanguageResources_BG:
             out = sys.stdout
         for v in self.ZERO:
             print(v, file=out)
-        print_forms(self.ONES_FEMININE, out)
         print_forms(self.ONES, out)
         print_forms(self.TENS, out)
         print_forms(self.TWENTIES, out)
@@ -68,30 +67,26 @@ class LanguageResources_BG:
                              ('нулеви', 'нулевите'))
 
         self.number_offsets = [3, 1, 1] # ones, tens, hundreds, thousands ... max offset (e.g. 3 offset levels of 11, 21, 31 in ONES)
-        self.ONES_FEMININE = {
+        self.ONES = {
             1: ('една', 'едната'),
             11: ('един', 'единия'),
             21: ('едно', 'едното'),
             31: ('един', 'единият'),
             2: ('две', 'двете'),
-            12: ('двама', 'двамата'),
-            22: ('два', 'двата'),
+            12: ('два', 'двата'),
+            22: ('двама', 'двамата'),
             3: ('три', 'трите'),
-            13: ('трима', 'тримата'),
+            23: ('трима', 'тримата'),
             4: ('четири', 'четирите'),
-            14: ('четирима', 'четиримата'),
+            24: ('четирима', 'четиримата'),
             5: ('пет', 'петте'),
-            15: ('петима', 'петимата'),
+            25: ('петима', 'петимата'),
             6: ('шест', 'шестте'),
-            16: ('шестима', 'шестимата'),
+            26: ('шестима', 'шестимата'),
             7: ('седем', 'седемте'),
             8: ('осем', 'осемте' ),
             9: ('девет', 'деветте'),
         }
-        self.ONES = self.ONES_FEMININE.copy()
-        self.ONES[1] = ('един', 'единия') # ALSO: единият !
-        self.ONES[2] = ('два', 'двата')
-        x = 'четиринадесет[_/те]|четиринайсет[_/те]'
 
         self.TENS = { 0: ('десет', 'десетте'),
                       1: ('единадесет', 'единадесетте'),
@@ -143,7 +138,8 @@ class LanguageResources_BG:
         }
 
         self.THOUSANDS = {
-            1: ('хиляди', 'хилядата'),  # 10^3
+            1: ('хиляди', 'хилядите'),  # 10^3
+            11: ('хиляда', 'хилядата'),  # 10^3
             2: ('милион', 'милионте'),  # 10^6
             3: ('милиард', 'милиардте'),  # 10^9
             4: ('трилион', 'трилионте'),  # 10^12
@@ -175,8 +171,8 @@ class LanguageResources_BG:
         self.POINTWORD = "запетая"
 
         self.ORD_STEMS_1 = {"нула": "нуле",
-                            "един": "първ",
-                            "два": "втор",
+                            "една": "първ",
+                            "две": "втор",
                             "три": "трет",
                             "четири": "четвърт",
                             "пет": "пет",
@@ -192,6 +188,7 @@ class LanguageResources_BG:
         self.ORD_STEMS_2 = self.get_ord_map()
         self.ORD_STEMS_2["сто"] =  "стот"
         self.ORD_STEMS_2["двеста"] = "двустот"
+        self.ORD_STEMS_2["двесте"] = "двустот"
         self.ORD_STEMS_2["триста"] = "тристот"
         # for 3 genders + plural
         self.ORD_SUFFIXES_2 = {0: ('ен', 'енте'),
@@ -201,12 +198,7 @@ class LanguageResources_BG:
 
         self.FLOAT_INTEGER_PART = 'цел' # цели
 
-        self.ORDS_SINGLE = {"един": "една",
-                            "единте": "една",
-                            "единия": "една",
-                            "единият": "една",
-                            "едната": "една",
-                           }
+        self.ORDS_SINGLE = ["една", "един", "едно", "единия", "единият", "едното", "едната"]
 
     def get_ord_map(self):
         result = {}
@@ -214,15 +206,13 @@ class LanguageResources_BG:
             stripped = val[0] # without the determinitive suffix
             if stripped.endswith('ин'):
                 stripped = stripped[:-2]
-            if stripped.endswith('а'): # хиляда
+            elif stripped.endswith('а') or stripped == 'хиляди': # хиляда
                 stripped = stripped[:-1]
+            elif stripped.endswith('он') or stripped.endswith('рд'):
+                result[val[0] + 'а'] = stripped
             result[val[0]] = stripped
         return result
 
-        #self.ORDS_FEMININE = {}
-        #for key, val in self.ONES_FEMININE.items():
-            #self.ORDS_FEMININE[key] = val[1] # genetive case: "дві": "двох",
-        #self.ORDS_FEMININE.update(self.ORDS_SINGLE) # this should overwrite for "одна"
 
 class Num2Word_BG(Num2Word_Base):
 
@@ -246,9 +236,9 @@ class Num2Word_BG(Num2Word_Base):
         else:
             return self._int2word(int(n), case=case, feminine=feminine, offsets=offsets)
 
-    def to_ordinal(self, number, num_gender=0, case=0):
+    def to_ordinal(self, number, offsets=[], num_gender=0, case=0):
         n = str(number)
-        return self.to_ordinal_num(int(n), num_gender=num_gender, case=case)
+        return self.to_ordinal_num(int(n), offsets=offsets, num_gender=num_gender, case=case)
 
     def to_year(self, number, case=0):
         return self.to_ordinal(number, num_gender=0, case=case)
@@ -260,7 +250,7 @@ class Num2Word_BG(Num2Word_Base):
             nominator = m.group(1)
             denominator = m.group(2)
 
-            res = self.to_cardinal(nominator, case=case, feminine=True) + ' '
+            res = self.to_cardinal(nominator, case=case) + ' '
             n = int(nominator)
             if n % 10 == 1 and (n % 100 != 11):
                 num_gender = 2
@@ -273,88 +263,20 @@ class Num2Word_BG(Num2Word_Base):
         else:
             raise ValueError(number)
 
-    def to_currency(self, val, currency='EUR', cents=True, separator='', case=0):
-        '''
-        currency_forms: tuple (,)
-        '''
-        my_val = str(val).replace(',', '.')
-        left, right, is_negative = parse_currency_parts(my_val)
-        currency_unit_reading = ''
-        if isinstance(currency, list): # then the expected format is (currency_base_form, cr1))
-            for (currency_base_form, cr1) in currency:
-                if not cr1:
-                    cr1, cr2 = self.lr.CURRENCY_FORMS[currency_base_form]
-                    currency_base_form=None
-                currency_unit_reading += ' ' + self.pluralize(left, cr1, case=case,
-                                                              currency_base_form=currency_base_form)
-            cr2 = None
-        else:
-            currency_base_form = None
-            try:
-                cr1, cr2 = self.lr.CURRENCY_FORMS[currency]
-                currency_unit_reading += ' ' + self.pluralize(left, cr1, case=case,
-                                                              currency_base_form=currency_base_form)
-            except KeyError:
-                raise NotImplementedError(
-                    'Currency code "%s" not implemented for "%s"' %
-                    (currency, self.__class__.__name__))
-
-        minus_str = "%s " % self.negword if is_negative else ""
-        cents_str = self._cents_verbose(right, currency, case=case) \
-            if cents else self._cents_terse(right, currency)
-
-        output = minus_str + self.to_cardinal(left, case=case, adjust_accusative=False)
-        output += currency_unit_reading
-        if cents_str:
-            output += separator + ' ' + cents_str
-        if cr2:
-            output += ' ' + self.pluralize(right, cr2, currency_base_form=currency_base_form, case=case)
-        return output
-
-    def decline(self, forms, currency_base_form=None, case=0): # select the right noun case
-        if isinstance(forms, tuple):
-            if currency_base_form:
-                return currency_base_form + forms[case]
-            return forms[case]
-        return forms
-
-    def pluralize(self, n, forms, currency_base_form=None, case=0): # select the right plural form of e.g. "dollars"
-        if not forms:
-            return ''
-        if n == 0:
-            return self.decline(forms[2], currency_base_form, case)
-        if n % 10 == 1:
-            return self.decline(forms[0], currency_base_form, case)
-        elif n % 10 <= 4 and (n % 100 > 14 or n % 100 <= 10): # the second condition means that numbers like 11, 12, 13, 14 use form 2
-            return self.decline(forms[1], currency_base_form, case)
-        return self.decline(forms[2], currency_base_form, case)
-
-    #def pluralize_thousand_potentials(self, n, i, case=0):
-        #if n % 100 < 10 or n % 100 > 20:
-            #if n % 10 == 1:
-                #form = 0
-            #elif 5 > n % 10 > 1:
-                #form = 1
-            #else:
-                #form = 2
-        #else:
-            #form = 2
-        #m = 1
-        #if i > 1:
-            #m = 2
-        #return self.lr.THOUSANDS_BASE[i] + self.lr.THOUSANDS[case]
-
-    def to_ordinal_num(self, number, num_gender=0, case=0):
+    def to_ordinal_num(self, number, offsets=[], num_gender=0, case=0):
     # optional num_gender: 0 (male), 1 (neutral), 2 (female) , 3 (plural)
     # optional case
         self.verify_ordinal(number)
         if number == 0:
             return self.lr.ZERO_ORDINAL[num_gender][case]
 
-        outwords = self.to_cardinal(number, case=0).split(' ') # use nominative case here!
-        if len(outwords) == 3:
-            if outwords[-3] in self.lr.ORDS_SINGLE.keys():
-                outwords[-3] = ''
+        outwords = self.to_cardinal(number, offsets=offsets, case=0).split(' ') # use nominative case here!
+        if len(outwords) >= 2: # remove "edin/edna" unless it is at the end
+            for n in range(len(outwords) - 1):
+                if outwords[n] in self.lr.ORDS_SINGLE: outwords[n] = ''
+            if outwords[0].startswith('два') and len(outwords) == 2: # two millionth, three billionth
+                outwords[0] = 'дву'
+
         lastword = outwords[-1].lower()
         mod_word = lastword
         if lastword in self.lr.ORD_STEMS_1:
@@ -380,22 +302,64 @@ class Num2Word_BG(Num2Word_Base):
             result += self.lr.NEGWORD + ' '
         return self.my_int2word(m, feminine=feminine, case=case, offsets=offsets, float_word=float_word)
 
-    def get_digits_with_offsets(self, chunk, offsets, i):
-        triple = get_digits(chunk)
+    def detnom_form(self, word):
+        result = word
+        if word == 'един':
+            return 'единия'
+        if word.endswith('а'):
+            return result + 'та'
+        else: # if word.endswith('е') or word.endswith('и') or word.endswith('о') or word.endswith('т'):
+            return result + 'те'
+        return result
+
+    def get_word_with_offset(self, mapping, n, offset, case):
+        real_offset = 10 * offset
+        idx = n + real_offset
+        if idx not in mapping: idx = n
+        word = mapping[idx][0]
+        if case == 1:
+            word = self.detnom_form(word)
+        return word
+
+    def get_words_with_offsets(self, chunk, case, offsets, i, insert_and=False, last_chunk=False):
+        words = []
+        n1, n2, n3 = get_digits(chunk)
+        if insert_and and (n3==0): # specific to BG
+            words.append(self.lr.AND)
+        n1_case = n2_case = n3_case = 0
+        if case == 1 and last_chunk:  # this is specific to BG
+            if n1 > 0:
+                n1_case = 1
+            elif n2 > 0:
+                n2_case = 1
+            elif n3 > 0:
+                n3_case = 1
+        # print("DEBUG: i, n1/n2/n3, last_chunk", i, n1_case, n2_case, n3_case, last_chunk)
+        if n3 > 0:
+            words.append(self.get_word_with_offset(self.lr.HUNDREDS, n3, offsets[2], n3_case))
+        if n2 > 1:
+            words.append(self.get_word_with_offset(self.lr.TWENTIES, n2, offsets[1], n2_case))
+        if n2 == 1:
+            if n1 == 0: n1_case = n2_case # for 10
+            words.append(self.get_word_with_offset(self.lr.TENS, n1, offsets[1], n1_case))
+        elif n1 > 0:
+            if n2 > 1 or n3 > 0:
+                words.append(self.lr.AND)
+            offset = offsets[0]
+            if i > 1:
+                if n1==1 or n1==2: offset = 1
+            words.append(self.get_word_with_offset(self.lr.ONES, n1, offset, n1_case))
         if i > 0:
-            return triple
-        for n in range(len(offsets)):
-            offset = 10*offsets[n]
-            if n == 0 and triple[0] > 0 and (triple[0] + offset) in self.lr.ONES:
-                triple[0] += offset
-            elif n == 1:
-                if triple[1] == 1 and (triple[1] + offset) in self.lr.TENS:
-                    triple[1] += offset
-                elif triple[1] > 1 and (triple[1] + offset) in self.lr.TWENTIES:
-                    triple[1] += offset
-            elif n==2 and triple[2] > 0 and (triple[2] + offset) in self.lr.HUNDREDS:
-                triple[2] += offset
-        return triple
+            offset = 0
+            if (i==1) and (n1==1): offset = 10 # to use the feminine form of one thousand
+            suffix = ''
+            if i > 1 and n1 > 1:
+                suffix = 'а' # милион - милиона
+            form = self.lr.THOUSANDS[i + offset][0] + suffix
+            # if case == 1 and last_chunk:
+            #    form = self.detnom_form(form)
+            words.append(form)
+        return words
 
     def my_int2word(self, n, feminine=False, case=0, offsets=[], adjust_accusative=True, float_word=None):
         if float_word != None: # e.g. 7 целых 5 десятых
@@ -404,50 +368,36 @@ class Num2Word_BG(Num2Word_Base):
                 float_word_realization = float_word_realization.replace(self.lr.ORD_STEMS_1[self.lr.ZERO[0]],
                                                                         self.lr.FLOAT_INTEGER_PART)
             return float_word_realization
-
         if n == 0:
             return self.lr.ZERO[case]
-
         words = []
         chunks = list(splitbyx(str(n), 3))
         i = len(chunks)
-        for x in chunks:
+        last_non_empty = 0
+        while i > 0:
+            if chunks[i-1] != 0:
+                last_non_empty = i-1
+                break
             i -= 1
-            if x == 0:
+        # print("DEBUG: chunks: ", chunks, last_non_empty)
+        i = len(chunks)
+        insert_and = False
+        for k, chunk in enumerate(chunks):
+            i -= 1
+            if chunk == 0:
                 continue
-            n1, n2, n3 = self.get_digits_with_offsets(x, offsets, i)
-            n1_case = n2_case = n3_case = 0
-            if case == 1 and i == 0:
-                if n1 > 0:
-                    n1_case = 1
-                elif n2 > 0:
-                    n2_case = 1
-                elif n3 > 0:
-                    n3_case = 1
-            if n3 > 0:
-                words.append(self.lr.HUNDREDS[n3][n3_case])
-            if n2 > 1:
-                words.append(self.lr.TWENTIES[n2][n2_case])
-            if n2 == 1:
-                words.append(self.lr.TENS[n1][n1_case])
-            elif n1 > 0:
-                if i == 1 or (feminine and i == 0):
-                    ones = self.lr.ONES_FEMININE
-                else:
-                    ones = self.lr.ONES
-                if n2 > 1:
-                    words.append(self.lr.AND)
-                words.append(ones[n1][n1_case])
-            if i > 0:
-                # print("DEBUG", i, n1, n2, n3, len(chunks))
-                words.append(self.lr.THOUSANDS[i][0])
-        return ' '.join(words)
+            real_offsets = offsets
+            if i > 0 or not len(offsets): real_offsets = [0, 0, 0]
+            words += self.get_words_with_offsets(chunk, case, real_offsets, i, insert_and, last_chunk=(k==last_non_empty))
+            if i == 1 or (k < len(chunks) - 1 and chunks[k+1] == 0):  # specific for BG
+                insert_and = True
+            else:
+                insert_and = False
 
+        return ' '.join(words)
 
 if __name__ == '__main__':
     yo = Num2Word_BG()
-#    yo.lr.print_all_forms('num2words.wordforms.uk')
-
     import sys
     for line in sys.stdin: # ['0 1 22 23 100 1000 2000']: #  ['1/4 14.22 10 150 2го 22-го 56/171 34х 1991 14.2 1016.53 0']:
         nums = line.strip().split()
@@ -455,26 +405,11 @@ if __name__ == '__main__':
             for case_name, case_variants in yo.lr.NOUN_CASES.items():
                 c = [case_variants]
                 for case in c:
-                    #try:
-                        #print("FRACTION", case_name, num, yo.to_fraction(num, case=case))
-                    #except ValueError:
-                        #pass
-                    #try:
-                        #print(case_name, num, yo.to_year(num, case=case))
-                    #except ValueError:
-                        #pass
                     try:
                         print("CARDINAL:", case_name, num, yo.to_cardinal(num, case=case))
                         print("EXPERIMENTAL:", yo.my_int2word(int(num), feminine=False, case=case, offsets=[1,1,1]))
                     except ValueError:
                         pass
- #                   try:
- #                       print(case_name, num, yo.to_currency(num, currency='RUB', case=case))
- #                       print(case_name, num, yo.to_currency(num, currency='USD', case=case))
- #                       print(case_name, num, yo.to_currency(num, currency='EUR', case=case))
- #                   except:
- #                       pass
-
             for num_gender_name, num_gender in yo.lr.GENDERS.items():
                 for case_name, case_variants in yo.lr.NOUN_CASES.items():
                     c = [case_variants]
@@ -484,5 +419,4 @@ if __name__ == '__main__':
                         except ValueError:
                             pass
 
-        # sys.stdout.write("\n")
 
