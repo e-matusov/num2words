@@ -26,7 +26,8 @@ import sys
 def print_forms(mapping, out, pref=''):
     for v in mapping.values():
         for x in v:
-            print(pref+x.replace('>', ''), file=out)
+            w = pref + x
+            print(w.replace('>', ''), file=out)
 
 class LanguageResources_SK:
 
