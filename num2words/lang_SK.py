@@ -26,7 +26,7 @@ import sys
 def print_forms(mapping, out, pref=''):
     for v in mapping.values():
         for x in v:
-            print(pref+x, file=out)
+            print(pref+x.replace('>', ''), file=out)
 
 class LanguageResources_SK:
 
@@ -44,15 +44,13 @@ class LanguageResources_SK:
         print_forms(self.HUNDREDS, out)
         print(self.NEGWORD, file=out)
         print(self.POINTWORD, file=out)
-        for x in self.THOUSANDS.values():
-            for y in x:
-               print(y, file=out)
+        print_forms(self.THOUSANDS, out)
         for v in self.ORD_STEMS.values():
             print_forms(self.ORD_SUFFIXES, out, v)
         for v in self.ORD_STEMS_EXCEPTION.values():
             print_forms(self.ORD_SUFFIXES_EXCEPTION, out, v)
 
-    def get_schemes(self, mapping, strict=True): # TODO: move to newtn_base once this becomes standard
+    def get_schemes(self, mapping, strict=True):
         result = {}
         for key, val in mapping.items():
             if not isinstance(key, tuple):
@@ -119,7 +117,7 @@ class LanguageResources_SK:
                                       4: 'štyr[i/och/om/i/och/mi]',
                                      14: 'štyr[ia/och/om/och/och/mi]',
                                      24: 'štvoro',
-                                      5: 'piat[...ät’/ich/im/...ät’/ich/imi]', # TODO: in postprocessing, join the apostrophe with t: ť
+                                      5: 'piat[...ät’/ich/im/...ät’/ich/imi]',
                                      15: 'piat[i/ich/im/ich/ich/imi]',
                                      25: 'pätoro',
                                       6: 'šest[’/ich/im/’/ich/imi]',
@@ -228,7 +226,8 @@ class LanguageResources_SK:
                                        4: 'ina/iny/ine/inu/ine/inou'.split('/'), # special gender for fractions
                                        5: 'iny/ín/inám/iny/inách/inami'.split('/')} # special gender for fractions
 
-        self.FLOAT_INTEGER_PART = 'celych' # цели # TODO: fix, use celych
+        self.ZERO_ORD_STEM = 'nulov>'
+        self.FLOAT_INTEGER_PART = 'cel'
 
         self.ORDS_SINGLE = self.ONES[1] + self.ONES[11] + self.ONES[21] + self.ONES[31] # a list
 
@@ -311,7 +310,7 @@ class Num2Word_SK(Num2Word_Base):
         outwords = self.my_int2word(number, offsets=offsets, case=0).split(' ') # use nominative case here!
         my_range = [-1] if shift > 0 else  [-3, -2, -1] # last 2 positions should get the ordinal form (not for fractions!)
                                                         # this is different from other langs where it is only the last word
-        print("DEBUG: ", outwords)
+        # print("DEBUG: ", outwords)
         if number > 1000 and len(outwords) >= 2: # remove "edin/edna" unless it is at the end
             if len(outwords) == 2:
                 my_range = [-1]
@@ -379,7 +378,7 @@ class Num2Word_SK(Num2Word_Base):
             offset = offsets[3]
             suffix = ''
             mycase = case
-            if i > 1 and n1 > 1: # TODO: make sure this works.
+            if i > 1 and n1 > 1:
                 if case in [0, 3]: mycase = 1
                 elif n1 >= 2:
                     offset = 1
@@ -391,7 +390,7 @@ class Num2Word_SK(Num2Word_Base):
         if float_word != None: # e.g. 7 целых 5 десятых
             float_word_realization = self.to_fraction(str(n) + '/' + str(float_word), case=case)
             if float_word == 0:
-                float_word_realization = float_word_realization.replace(self.lr.ORD_STEMS[self.lr.ONES[100][0]],
+                float_word_realization = float_word_realization.replace(self.lr.ZERO_ORD_STEM,
                                                                         self.lr.FLOAT_INTEGER_PART)
             return float_word_realization
         if n == 0:
