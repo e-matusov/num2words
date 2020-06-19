@@ -36,8 +36,8 @@ class LanguageResources_SK:
         else:
             import sys
             out = sys.stdout
-#        for v in self.ZERO:
-#            print(v, file=out)
+        for v in self.ZERO:
+            print(v, file=out)
         print_forms(self.ONES, out)
         print_forms(self.TENS, out)
         print_forms(self.TWENTIES, out)
@@ -96,6 +96,7 @@ class LanguageResources_SK:
                                               1: 'nulov[é/ého/ému/é/ým/om]',
                                               2: 'nulov[á/ej/ej/ú/ou/ej]',
                                               3: 'nulov[é/ých/ým/í/ými/ých]'})
+        self.ZERO = ['nula']
 
         self.number_offsets = [4, 1, 2, 3] # ones, tens, hundreds, thousands ... max offset (e.g. 3 offset levels of 11, 21, 31 in ONES)
         self.ONES = self.get_schemes({
@@ -126,20 +127,20 @@ class LanguageResources_SK:
                                      27: 'sedmoro',
                                       8: 'os[em/mich/mim/em/mich/mimi]',
                                      28: 'osmoro',
-                                      9: 'deviat[...ät’/ich/im/...ät’/ich/imi]',
+                                      9: 'deviat[...ät’/ich/im/i/ich/imi]',
                                      29: 'devätoro'})
 
-        self.TENS = self.get_schemes({ 0: 'desat[’/ich/im/’/ich/imi]',
-                                       1: 'jedenást[’/ich/im/’/ich/imi]',
-                                       2: 'dvanást[’/ich/im/’/ich/imi]',
+        self.TENS = self.get_schemes({ 0: 'desiat[...at’/ich/im/i/ich/imi]',
+                                       1: 'jedenást[’/ich/im/i/ich/imi]',
+                                       2: 'dvanást[’/ich/im/i/ich/imi]',
                                       12: 'dvanástoro',
-                                       3: 'trinást[’/ich/im/’/ich/imi]',
-                                       4: 'štrnást[’/ich/im/’/ich/imi]',
-                                       5: 'pätnást[’/ich/im/’/ich/imi]',
-                                       6: 'šestnást[’/ich/im/’/ich/imi]',
-                                       7: 'sedemnást[’/ich/im/’/ich/imi]',
-                                       8: 'osemnást[’/ich/im/’/ich/imi]',
-                                       9: 'devätnást[’/ich/im/’/ich/imi]'})
+                                       3: 'trinást[’/ich/im/i/ich/imi]',
+                                       4: 'štrnást[’/ich/im/i/ich/imi]',
+                                       5: 'pätnást[’/ich/im/i/ich/imi]',
+                                       6: 'šestnást[’/ich/im/i/ich/imi]',
+                                       7: 'sedemnást[’/ich/im/i/ich/imi]',
+                                       8: 'osemnást[’/ich/im/i/ich/imi]',
+                                       9: 'devätnást[’/ich/im/i/ich/imi]'})
 
         self.TWENTIES = self.get_schemes({ 2: 'dvads[at’/iati/iatim/at’/iatich/iatimi]',
                                            3: 'trids[at’/iati/iatim/at’/iatich/iatimi]',
@@ -150,8 +151,8 @@ class LanguageResources_SK:
                                            8: 'osemdesiat[_/i/im/_/ich/imi]',
                                            9: 'deväťdesiat[_/i/im/_/ich/imi]'})
 
-        self.HUNDREDS = self.get_schemes({ 1: 'st[o/á/o/ám/ách/ámi]',
-                                          11: 'st[a/o/o/e/om]',
+        self.HUNDREDS = self.get_schemes({ 1: 'st[o/á/ám/a/ách/ámi]',
+                                          11: 'st[a/o/e/o/om]',
                                           21: 'storo',
                                            2: 'dvesto',
                                            3: 'tristo',
@@ -176,8 +177,14 @@ class LanguageResources_SK:
                                            15: 'kvadrilión[y/ov/om/y/och/mi]',  # 10^15
                                             6: 'kvintilión[_/a/u/_/e/om]',  # 10^18
                                            16: 'kvintilión[y/ov/om/y/och/mi]',  # 10^18
-                                            6: 'kvintilión[_/a/u/_/e/om]',  # 10^18
-                                           16: 'kvintilión[y/ov/om/y/och/mi]'})
+                                            7: 'sekstilión[_/a/u/_/e/om]',  # 10^18
+                                           17: 'sekstilión[y/ov/om/y/och/mi]',
+                                            8: 'septilión[_/a/u/_/e/om]',  # 10^18
+                                           18: 'septilión[y/ov/om/y/och/mi]',
+                                            9: 'oktilión[_/a/u/_/e/om]',  # 10^18
+                                           19: 'oktilión[y/ov/om/y/och/mi]',
+                                            9: 'nonilión[_/a/u/_/e/om]',  # 10^18
+                                           19: 'nonilión[y/ov/om/y/och/mi]'})
 
         self.CURRENCY_FORMS = {} # will be handled via newtn
 
@@ -192,11 +199,12 @@ class LanguageResources_SK:
                                "tr": "tret",
                                "štyr": "štvrt",
                                "pät": "piat",
+                               'p': "piat",
                                "šest": "šiest",
-                               "sedem": "siedm",
-                               "osem": "ôsm",
-                               "devät": "deviat",
-                               "desat": "desiat",
+                               "sed": "siedm",
+                               "os": "ôsm",
+                               "dev": "deviat",
+                               "des": "desiat",
                                "dvads": "dvadsiat",
                                "trids": "tridsiat",
                                "štyrids": "štyridsiat",
@@ -326,7 +334,7 @@ class Num2Word_SK(Num2Word_Base):
             if (len(outwords) + m) < 0:
                 continue
             lastword = outwords[m].lower().split('>')[0]
-            if len(lastword) == 1: lastword = outwords[m].lower().replace('>', '') # e.g. pät'
+            # if len(lastword) == 1: lastword = outwords[m].lower().replace('>', '') # e.g. pät'
             mod_word = lastword
             if lastword in self.lr.ORD_STEMS_EXCEPTION:
                 mod_word = self.lr.ORD_STEMS_EXCEPTION[lastword] + self.lr.ORD_SUFFIXES_EXCEPTION[num_gender+ shift][case]
@@ -373,7 +381,8 @@ class Num2Word_SK(Num2Word_Base):
         elif n1 > 0:
             offset = offsets[0]
             if i > 1 and n1 <= 2: offset = 1
-            words.append(self.get_word_with_offset(self.lr.ONES, n1, offset, case))
+            if i < 1 or n1 >= 2: # do not output "one thousand", just "thousand", same for million, etc.
+                words.append(self.get_word_with_offset(self.lr.ONES, n1, offset, case))
         if i > 0:
             offset = offsets[3]
             suffix = ''
