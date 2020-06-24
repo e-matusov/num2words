@@ -148,7 +148,7 @@ class LanguageResources_SK:
                                            4: 'štyrids[at’/iati/iatim/at’/iatich/iatimi]',
                                            5: 'päťdesiat[_/i/im/_/ich/imi]',
                                            6: 'šesťdesiat[_/i/im/_/ich/imi]',
-                                           7: 'šedemdesiat[_/i/im/_/ich/imi]',
+                                           7: 'sedemdesiat[_/i/im/_/ich/imi]',
                                            8: 'osemdesiat[_/i/im/_/ich/imi]',
                                            9: 'deväťdesiat[_/i/im/_/ich/imi]'})
 
