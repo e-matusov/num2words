@@ -83,10 +83,10 @@ class LanguageResources_SL:
     def __init__(self):
         self.NOUN_CASES = {'nom': 0, # nominative
                            'gen': 1, # genetive
-                           'dat': 2,
-                           'acc': 3,
-                           'loc': 4,
-                           'inst': 5
+                           'dat': 2, # dative
+                           'acc': 3, # accusative
+                           'loc': 4, # locative
+                           'inst': 5 # instrumental
                           }
         self.GENDERS = {'masc': 0,
                         'neut':  1,
@@ -144,15 +144,15 @@ class LanguageResources_SL:
                                            8: 'osemdeset[_/ih/im/_/ih/imi]',
                                            9: 'devetdeset[_/ih/im/_/ih/imi]'})
 
-        self.HUNDREDS = self.get_schemes({ 1: 'st[o/ih/im/o/ih/imi]',
-                                           2: 'dvest[o/ih/im/o/ih/imi]',
-                                           3: 'trist[o/ih/im/o/ih/imi]',
-                                           4: 'štirist[o/ih/im/o/ih/imi]',
-                                           5: "petst[o/ih/im/o/ih/imi]",
-                                           6: 'šestst[o/ih/im/o/ih/imi]',
-                                           7: 'sedemst[o/ih/im/o/ih/imi]',
-                                           8: 'osemst[o/ih/im/o/ih/imi]',
-                                           9: "devetst[o/ih/im/o/ih/imi]"})
+        self.HUNDREDS = self.get_schemes({ 1: 'sto[_/tih/tim/_/tih/timi]',
+                                           2: 'dvesto[_/tih/tim/_/tih/timi]',
+                                           3: 'tristo[_/tih/tim/_/tih/timi]',
+                                           4: 'štiristo[_/tih/tim/_/tih/timi]',
+                                           5: "petsto[_/tih/tim/_/tih/timi]",
+                                           6: 'šeststo[_/tih/tim/_/tih/timi]',
+                                           7: 'sedemsto[_/tih/tim/_/tih/timi]',
+                                           8: 'osemsto[_/tih/tim/_/tih/timi]',
+                                           9: "devetsto[_/tih/tim/_/tih/timi]"})
 
         self.THOUSANDS = self.get_schemes({ 1: 'tisoč[_/ih/im/_/ih/imi]',  # 10^3
                                             2: 'milijon[_/a/u/_/u/om]',  # 10^6
@@ -185,7 +185,7 @@ class LanguageResources_SL:
         self.ORD_STEMS.update({"nič": "ničn", # keys should be in nominative case here
                                "en": "prv",
                                "dv": "drug",
-                               "tr": "tret",
+                               "tr": "tretj",
                                "štir": "četrt",
                                "pet": "pet",
                                'p': "pet",
@@ -194,7 +194,7 @@ class LanguageResources_SL:
                                "os": "osm",
                                "dev": "devet",
                                "des": "deset",
-                               "st": "st",
+                               "sto": "stot",
                                })
         # print(self.ORD_STEMS, file=sys.stderr)
         # for 3 genders + plural
@@ -204,20 +204,10 @@ class LanguageResources_SL:
                              3: 'i/ih/im/e/ih/imi'.split('/'),
                              4: 'ina/ini/ine/inu/ine/inu'.split('/'), # special gender for fractions # TODO: check forms in corpus
                              5: 'ini/in/inam/ini/inih/inami'.split('/')} # special gender for fractions
-        self.ORD_STEMS_EXCEPTION = {
-                                    "tri": "tret",
-                                    "tisíc": "tisíc",
-                                    "tisíce": "tisíc",
-                                   }
-        # for 3 and 1000
-        self.ORD_SUFFIXES_EXCEPTION = {0: 'í/ieho/iemu/í/ím/om'.split('/'),
-                                       1: 'ie/ieho/iemu/ie/ím/om'.split('/'),
-                                       2: 'ia/ej/ej/iu/ou/ej'.split('/'),
-                                       3: 'i/ich/im/i/imi/ich'.split('/'),
-                                       4: 'ina/iny/ine/inu/ine/inou'.split('/'), # special gender for fractions
-                                       5: 'iny/ín/inám/iny/inách/inami'.split('/')} # special gender for fractions
+        self.ORD_STEMS_EXCEPTION = {}
+        self.ORD_SUFFIXES_EXCEPTION = {}
 
-        self.ZERO_ORD_STEM = 'ničn>'
+        self.ZERO_ORD_STEM = 'ničn'
         self.FLOAT_INTEGER_PART = 'cel'
 
         self.ORDS_SINGLE = self.ONES[1] + self.ONES[11] + self.ONES[21] # a list
@@ -227,7 +217,7 @@ class LanguageResources_SL:
         for val in list(self.HUNDREDS.values()) + list(self.THOUSANDS.values()) + list(self.TWENTIES.values()) + list(self.TENS.values()):
             new_key = val[0].split('>')[0] # just the stem
             stripped = new_key
-            if stripped.endswith('on')or  stripped.endswith('rd'):
+            if stripped.endswith('on') or stripped.endswith('rd') or stripped.endswith('sto'):
                 stripped = stripped + 't' # million
             result[new_key] = stripped
         return result
@@ -294,7 +284,7 @@ class Num2Word_SL(Num2Word_Base):
     # optional case
         self.verify_ordinal(number)
         if number == 0:
-            return self.lr.ZERO_ORDINAL[num_gender][case]
+            return self.lr.ZERO_ORDINAL[num_gender][case].replace('>', '')
 
         outwords = self.my_int2word(number, offsets=offsets, case=0).split(' ') # use nominative case here!
         my_range = [-1] # only the last word is declined in Slovenian ordinal numbers
@@ -369,18 +359,22 @@ class Num2Word_SL(Num2Word_Base):
             words.append(self.get_word_with_offset(self.lr.TENS, n1, offsets[1], case))
         elif n1 > 0 and n2 <= 1:
             offset = offsets[0]
-            if i > 1 and n1 <= 2: offset = 1
+            if n1 <= 2:
+                if (i==1) or (i==2) or ((i > 3) and (i % 2 == 0)): offset = 1
+            # print("DEBUG: offset", offset)
             if i < 1 or n1 >= 2: # do not output "one thousand", just "thousand", same for million, etc.
                 words.append(self.get_word_with_offset(self.lr.ONES, n1, offset, case))
         if i > 0:
             offset = offsets[3]
             suffix = ''
             mycase = case
-            if i > 1 and n1 > 1:
+            if i == 1 and n1 > 1:
+                mycase = 0 # does not decline if is not a single thousand
+            elif i > 1 and n1 > 1:
                 if case in [0, 3]: mycase = 1
                 elif n1 >= 2:
-                    offset = 1
-            # print("DEBUG: i, n1/n2/n3, case", i, n1, n2, n3, mycase)
+                    offset = 1 # milijonov, milijard
+            # print("DEBUG: i, n1/n2/n3, case, offset", i, n1, n2, n3, mycase, offset)
             words.append(self.get_word_with_offset(self.lr.THOUSANDS, i, offset, mycase))
         return words
 

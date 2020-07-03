@@ -235,7 +235,7 @@ class LanguageResources_SK:
                                        4: 'ina/iny/ine/inu/ine/inou'.split('/'), # special gender for fractions
                                        5: 'iny/ín/inám/iny/inách/inami'.split('/')} # special gender for fractions
 
-        self.ZERO_ORD_STEM = 'nulov>'
+        self.ZERO_ORD_STEM = 'nulov'
         self.FLOAT_INTEGER_PART = 'cel'
 
         self.ORDS_SINGLE = self.ONES[1] + self.ONES[11] + self.ONES[21] + self.ONES[31] # a list
@@ -314,7 +314,7 @@ class Num2Word_SK(Num2Word_Base):
     # optional case
         self.verify_ordinal(number)
         if number == 0:
-            return self.lr.ZERO_ORDINAL[num_gender][case]
+            return self.lr.ZERO_ORDINAL[num_gender][case].replace('>', '')
 
         outwords = self.my_int2word(number, offsets=offsets, case=0).split(' ') # use nominative case here!
         my_range = [-1] if shift > 0 else  [-3, -2, -1] # last 2 positions should get the ordinal form (not for fractions!)
