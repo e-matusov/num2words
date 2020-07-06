@@ -94,15 +94,16 @@ class LanguageResources_SL:
                         'plur': 3} # technically not gender, but...
 
         self.ZERO_ORDINAL = self.get_schemes({0: 'nič[ni/nega/nemu/en/nem/nim]',
-                                              1: 'nič[no/nega/nému/no/nem/nim]',
-                                              2: 'nič[ná/ne/ni/no/ni/no]',
+                                              1: 'nič[no/nega/nemu/no/nem/nim]',
+                                              2: 'nič[na/ne/ni/no/ni/no]',
                                               3: 'nič[ni/nih/nim/ne/nimi/nih]'})
         self.ZERO = ['nič']
 
         self.number_offsets = [2, 0, 0, 2] # ones, tens, hundreds, thousands ... max offset (e.g. 3 offset levels of 11, 21, 31 in ONES) #
         self.ONES = self.get_schemes({
-                                     100: 'nič[_/le/li/la//lom/li]',
-                                     110: 'nič[la/el/elam/la/lami/lah]', # TODO: check for declensions of null!
+                                     100: 'nič[la/le/li/lo/li/lo]',
+                                     110: 'nič[le/el/lam/e/lah/ami]',
+                                     120: 'nič[li/el/lama/li/lah/lama]',
                                       1: 'en[a/e/i/o/i/o]',
                                       11: 'en[_/ega/emu/.den/em/im]',
                                       21: 'en[o/ega/emu/o/em/im]',
@@ -202,7 +203,7 @@ class LanguageResources_SL:
                              1: 'o/ega/emu/o/em/im'.split('/'),
                              2: 'a/e/i/o/i/o'.split('/'),
                              3: 'i/ih/im/e/ih/imi'.split('/'),
-                             4: 'ina/ini/ine/inu/ine/inu'.split('/'), # special gender for fractions # TODO: check forms in corpus
+                             4: 'ina/ini/ine/inu/ine/inu'.split('/'), # special gender for fractions
                              5: 'ini/in/inam/ini/inih/inami'.split('/')} # special gender for fractions
         self.ORD_STEMS_EXCEPTION = {}
         self.ORD_SUFFIXES_EXCEPTION = {}
